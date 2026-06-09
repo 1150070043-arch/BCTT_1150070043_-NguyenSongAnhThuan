@@ -1,0 +1,11 @@
+namespace WebsiteServiceEcommerce.API.Models
+{
+    public class ServiceCategory
+    {
+        public int Id { get; set; }
+        public string CategoryName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+}

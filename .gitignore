@@ -1,0 +1,31 @@
+# Dependencies
+FE/node_modules/
+
+# Frontend build output
+FE/dist/
+
+# Backend build output
+BE/bin/
+BE/obj/
+
+# Local configuration and secrets
+BE/appsettings.Development.json
+BE/appsettings.*.local.json
+
+# Runtime logs
+*.log
+BE/api-*.out.log
+BE/api-*.err.log
+
+# Uploaded/runtime files
+BE/wwwroot/uploads/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/
+
+# Temporary build folders
+_tmp_be_build/
