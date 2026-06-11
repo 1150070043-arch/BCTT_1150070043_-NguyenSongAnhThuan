@@ -9,8 +9,8 @@ BE/bin/
 BE/obj/
 
 # Local configuration and secrets
-BE/appsettings.Development.json
 BE/appsettings.*.local.json
+BE/appsettings.*.Local.json
 
 # Runtime logs
 *.log
