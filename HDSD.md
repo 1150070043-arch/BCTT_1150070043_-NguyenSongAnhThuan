@@ -128,12 +128,11 @@ Nếu database có dữ liệu mẫu, có thể dùng các tài khoản sau. M�
 
 | Email | Vai trò | Ghi chú |
 | --- | --- | --- |
-| `admin@websiteservice.vn` | Admin | Quản trị hệ thống |
+| `admin@ngocanhphuthinh9.vn` | Admin | Admin tổng |
 | `customer1@example.com` | Customer | Khách hàng |
 | `customer2@example.com` | Customer | Khách hàng |
-| `minhanh@studio.com` | Provider | Kho vận/chi nhánh |
-| `bluepixel@agency.com` | Provider | Kho vận/chi nhánh |
-| `thanhvu@dev.com` | Provider | Kho vận/chi nhánh |
+| `sales@ngocanhphuthinh9.vn` | Provider | Kho vận chi nhánh Thủ Đức |
+| `khovan.phunhuan@ngocanhphuthinh9.vn` | Provider | Kho vận chi nhánh Phú Nhuận |
 
 Nếu tài khoản mẫu không tồn tại, đăng ký tài khoản Customer tại:
 
@@ -141,7 +140,13 @@ Nếu tài khoản mẫu không tồn tại, đăng ký tài khoản Customer t�
 http://localhost:5173/#/register
 ```
 
-Tài khoản Admin/Provider được tạo từ màn hình Admin hoặc thêm trực tiếp trong database. Khi tạo kho vận thực tế, nên đặt tên rõ chi nhánh, ví dụ:
+Tài khoản Admin/Provider được tạo từ màn hình Admin hoặc thêm trực tiếp trong database. Khi cần seed nhanh 2 kho vận chi nhánh, chạy script:
+
+```txt
+Database/seed-branch-warehouses.sql
+```
+
+Khi tạo kho vận thực tế, nên đặt tên rõ chi nhánh, ví dụ:
 
 - `Ngoc Anh Phu Thinh 9 - Phan phoi nuoc da chi nhanh Thu Duc`
 - `Ngoc Anh Phu Thinh 9 - Phan phoi nuoc da chi nhanh Phu Nhuan`
