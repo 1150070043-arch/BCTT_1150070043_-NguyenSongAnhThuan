@@ -129,7 +129,7 @@ function OrderDetailPage() {
                 <section className="work-panel">
                   <OrderStatusTimeline status={order.status} />
                   <p>
-                    <strong>Tráº¡ng thĂ¡i:</strong>{' '}
+                    <strong>Trạng thái:</strong>{' '}
                     <span className={`order-status-badge status-tone--${getOrderStatusTone(order.status)}`}>
                       {getOrderStatusLabel(order.status)}
                     </span>
