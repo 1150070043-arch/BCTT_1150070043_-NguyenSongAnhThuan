@@ -15,6 +15,8 @@ function ProviderPackagesPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [stockForms, setStockForms] = useState({});
+  const [adjustingId, setAdjustingId] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -23,7 +25,7 @@ function ProviderPackagesPage() {
       if (response.success) setProducts(response.data || []);
       else setError(response.message || 'Không thể tải sản phẩm.');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Vui lòng đăng nhập tài khoản kho vận.'));
+      setError(getApiErrorMessage(err, 'Vui lòng đăng nhập tài khoản kho.'));
     } finally {
       setLoading(false);
     }
@@ -32,6 +34,51 @@ function ProviderPackagesPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const updateStockForm = (productId, field, value) => {
+    setStockForms((current) => ({
+      ...current,
+      [productId]: {
+        quantity: '',
+        reason: '',
+        ...(current[productId] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const adjustStock = async (product, movementType) => {
+    const form = stockForms[product.id] || {};
+    const quantity = Number(form.quantity || 0);
+    if (quantity <= 0) {
+      setError('Vui lòng nhập số lượng kho lớn hơn 0.');
+      return;
+    }
+
+    setError('');
+    setAdjustingId(`${product.id}:${movementType}`);
+    try {
+      const response = await providerApi.adjustStock(product.id, {
+        productId: product.id,
+        movementType,
+        quantity,
+        reason: form.reason || '',
+      });
+      if (!response.success) {
+        setError(response.message || 'Không thể cập nhật tồn kho.');
+        return;
+      }
+      setStockForms((current) => ({
+        ...current,
+        [product.id]: { quantity: '', reason: '' },
+      }));
+      await load();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Không thể cập nhật tồn kho.'));
+    } finally {
+      setAdjustingId('');
+    }
+  };
 
   return (
     <div className="app-shell ice-theme">
@@ -42,11 +89,11 @@ function ProviderPackagesPage() {
             <div className="page-title-row">
               <div>
                 <span className="eyebrow">Kho vận</span>
-                <h1>Sản phẩm đang quản lý</h1>
+                <h1>Sản phẩm và tồn kho</h1>
               </div>
               <div className="inline-actions">
-                <Link className="btn btn--ghost" to="/provider/orders">Xử lý đơn</Link>
-                <Link className="btn btn--primary" to="/provider/packages/create">Thêm sản phẩm</Link>
+                <Link className="btn btn--ghost" to="/provider/orders">Đơn cần xuất</Link>
+                <Link className="btn btn--primary" to="/provider/packages/create">Nhập sản phẩm</Link>
               </div>
             </div>
 
@@ -61,8 +108,46 @@ function ProviderPackagesPage() {
                     <span className="eyebrow">{product.category} · {getProductState(product)}</span>
                     <h2>{product.name}</h2>
                     <p>{product.shortDescription || product.description}</p>
-                    <p>{Number(product.price).toLocaleString('vi-VN')}đ/{product.unit} · Còn {product.stockQuantity}</p>
+                    <p>{Number(product.price).toLocaleString('vi-VN')}đ/{product.unit}</p>
+                    <p><strong>Tồn kho:</strong> {product.stockQuantity} {product.unit}</p>
                     <strong>{product.sku || 'Chưa có SKU'}</strong>
+                    <div className="admin-form-grid">
+                      <label>
+                        Số lượng
+                        <input
+                          type="number"
+                          min="1"
+                          value={stockForms[product.id]?.quantity || ''}
+                          onChange={(event) => updateStockForm(product.id, 'quantity', event.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Lý do
+                        <input
+                          value={stockForms[product.id]?.reason || ''}
+                          onChange={(event) => updateStockForm(product.id, 'reason', event.target.value)}
+                          placeholder="VD: nhập hàng mới, kiểm kê..."
+                        />
+                      </label>
+                    </div>
+                    <div className="inline-actions">
+                      <button
+                        className="btn btn--primary"
+                        type="button"
+                        disabled={Boolean(adjustingId)}
+                        onClick={() => adjustStock(product, 'StockIn')}
+                      >
+                        {adjustingId === `${product.id}:StockIn` ? 'Đang nhập...' : 'Nhập kho'}
+                      </button>
+                      <button
+                        className="btn btn--ghost"
+                        type="button"
+                        disabled={Boolean(adjustingId)}
+                        onClick={() => adjustStock(product, 'StockOut')}
+                      >
+                        {adjustingId === `${product.id}:StockOut` ? 'Đang xuất...' : 'Xuất kho'}
+                      </button>
+                    </div>
                   </article>
                 ))}
               </div>

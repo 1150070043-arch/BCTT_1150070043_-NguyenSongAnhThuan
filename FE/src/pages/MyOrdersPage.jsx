@@ -1,4 +1,4 @@
-import { PackageSearch } from 'lucide-react';
+﻿import { PackageSearch } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getApiErrorMessage } from '../api/client.js';
@@ -62,7 +62,7 @@ function MyOrdersPage() {
               <div>
                 <span className="eyebrow">Khách hàng</span>
                 <h1>Đơn hàng của tôi</h1>
-                <p>Theo dõi trạng thái giao hàng, chi tiết sản phẩm và đánh giá sau khi hoàn tất.</p>
+                <p>Theo dõi trạng thái bàn giao, chi tiết sản phẩm và đánh giá sau khi hoàn tất.</p>
               </div>
               <NotificationBell />
             </div>
@@ -105,3 +105,4 @@ function MyOrdersPage() {
 }
 
 export default MyOrdersPage;
+

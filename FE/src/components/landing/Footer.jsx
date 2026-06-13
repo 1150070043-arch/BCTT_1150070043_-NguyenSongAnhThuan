@@ -1,4 +1,4 @@
-import { Snowflake } from 'lucide-react';
+﻿import { Snowflake } from 'lucide-react';
 
 function Footer() {
   return (
@@ -30,7 +30,7 @@ function Footer() {
         </div>
         <div>
           <h3>Chính sách</h3>
-          <a href="#products">Giao hàng</a>
+          <a href="#products">Bàn giao</a>
           <a href="#products">Thanh toán</a>
           <a href="#products">Đổi trả</a>
         </div>
@@ -43,3 +43,4 @@ function Footer() {
 }
 
 export default Footer;
+

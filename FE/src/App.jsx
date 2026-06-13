@@ -17,7 +17,6 @@ import ProviderPackagesPage from './pages/ProviderPackagesPage.jsx';
 import ProviderCreatePackagePage from './pages/ProviderCreatePackagePage.jsx';
 import ProviderOrdersPage from './pages/ProviderOrdersPage.jsx';
 import ProviderOrderDetailPage from './pages/ProviderOrderDetailPage.jsx';
-import DeliverySubmitPage from './pages/DeliverySubmitPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 import AdminUsersPage from './pages/AdminUsersPage.jsx';
 import AdminProvidersPage from './pages/AdminProvidersPage.jsx';
@@ -69,7 +68,6 @@ function AnimatedRoutes() {
           <Route path="/provider/packages/create" element={<ProtectedRoute roles={['Provider']}><ProviderCreatePackagePage /></ProtectedRoute>} />
           <Route path="/provider/orders" element={<ProtectedRoute roles={['Provider']}><ProviderOrdersPage /></ProtectedRoute>} />
           <Route path="/provider/orders/:id" element={<ProtectedRoute roles={['Provider']}><ProviderOrderDetailPage /></ProtectedRoute>} />
-          <Route path="/provider/orders/:id/delivery" element={<ProtectedRoute roles={['Provider']}><DeliverySubmitPage /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute roles={['Admin']}><AdminDashboardPage /></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute roles={['Admin']}><AdminUsersPage /></ProtectedRoute>} />
           <Route path="/admin/providers" element={<ProtectedRoute roles={['Admin']}><AdminProvidersPage /></ProtectedRoute>} />

@@ -1,10 +1,10 @@
-import { Star } from 'lucide-react';
+﻿import { Star } from 'lucide-react';
 
 const reviews = [
   ['Minh Khang', 'Chủ quán cafe', 'Đá bi giữ lạnh tốt, giao đúng giờ nên ca sáng không bị thiếu đá.'],
   ['Thảo Vy', 'Gia đình', 'Đặt túi 5kg cho tiệc nhỏ rất tiện, đá sạch và đóng gói gọn.'],
   ['Quốc Bảo', 'Nhà hàng', 'Combo sự kiện xử lý nhanh, số lượng lớn mà vẫn giao đúng lịch.'],
-  ['Anh Phúc', 'Đại lý', 'Giá sỉ rõ ràng, nhập lại dễ, đội giao hàng phản hồi nhanh.'],
+  ['Anh Phúc', 'Đại lý', 'Giá sỉ rõ ràng, nhập lại dễ, đội kho phản hồi nhanh.'],
 ];
 
 function Testimonials() {
@@ -37,3 +37,4 @@ function Testimonials() {
 }
 
 export default Testimonials;
+

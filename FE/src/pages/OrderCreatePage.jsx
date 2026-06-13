@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getApiErrorMessage } from '../api/client.js';
 import packagesApi from '../api/packages.js';
@@ -281,18 +281,6 @@ function OrderCreatePage() {
                         disabled={loadingProduct || isOutOfStock}
                       />
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Phương thức giao hàng</label>
-                      <select
-                        className="form-select"
-                        value={form.deliveryMethod}
-                        onChange={(e) => updateForm('deliveryMethod', e.target.value)}
-                      >
-                        <option value="Standard">Giao tiêu chuẩn (3-5 ngày)</option>
-                        <option value="Express">Giao hỏa tốc (1-2 ngày)</option>
-                        <option value="DailyRoute">Giao theo tuyến định kỳ</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
 
@@ -320,7 +308,7 @@ function OrderCreatePage() {
                     />
                   </div>
                   <div className="form-group recipient-address-field">
-                    <label className="form-label">Địa chỉ giao hàng<span className="required-mark">*</span></label>
+                    <label className="form-label">Địa chỉ nhận hàng<span className="required-mark">*</span></label>
                     <div className="address-mode-group">
                       {savedAddresses.length > 0 && savedAddresses.map((address) => (
                         <label className={`address-mode-card ${addressMode === `saved:${address.id}` || (addressMode === 'saved' && address.addressLine === savedAddress) ? 'is-selected' : ''}`} key={address.id}>
@@ -373,7 +361,7 @@ function OrderCreatePage() {
                       />
                     ) : (
                       <div className="saved-address-preview">
-                        <strong>Địa chỉ giao hàng:</strong> {savedAddress}
+                        <strong>Địa chỉ nhận hàng:</strong> {savedAddress}
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(savedAddress)}`}
                           target="_blank"
@@ -402,7 +390,7 @@ function OrderCreatePage() {
                   <div className="form-group">
                     <textarea
                       className="form-textarea"
-                      placeholder="Ghi chú về thời gian giao hàng, địa điểm để hàng..."
+                      placeholder="Ghi chú về thời gian nhận hàng, địa điểm để hàng..."
                       value={form.requirement}
                       onChange={(e) => updateForm('requirement', e.target.value)}
                       style={{ minHeight: '70px' }}
@@ -434,7 +422,7 @@ function OrderCreatePage() {
                   <span className="summary-value">{subtotal.toLocaleString('vi-VN')}đ</span>
                 </div>
                 <div className="summary-row">
-                  <span className="summary-label">Phí vận chuyển</span>
+                  <span className="summary-label">Phí xử lý</span>
                   <span className="summary-value">{SHIPPING_FEE === 0 ? 'Miễn phí' : `${SHIPPING_FEE.toLocaleString('vi-VN')}đ`}</span>
                 </div>
                 <div className="summary-row summary-total">
@@ -451,3 +439,4 @@ function OrderCreatePage() {
 }
 
 export default OrderCreatePage;
+

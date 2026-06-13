@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { getApiErrorMessage } from '../api/client.js';
 import ordersApi from '../api/orders.js';
@@ -12,7 +12,7 @@ const PAYMENT_OPTIONS = [
     label: 'COD khi nhận hàng',
     badge: 'Khuyên dùng',
     description: 'Tạo đơn ngay, thanh toán tiền mặt khi nhận đá.',
-    result: 'Đơn hàng chờ xử lý, thanh toán sẽ được thu khi giao hàng.',
+    result: 'Đơn hàng chờ xử lý, thanh toán sẽ được thu khi bàn giao.',
   },
   {
     value: 'MockBanking',
@@ -149,7 +149,7 @@ function CheckoutPage() {
     }
 
     if (!hasShippingInfo) {
-      setMessage('Thiếu thông tin giao hàng. Vui lòng nhập lại trước khi checkout.');
+      setMessage('Thiếu thông tin nhận hàng. Vui lòng nhập lại trước khi checkout.');
       return;
     }
 
@@ -234,7 +234,7 @@ function CheckoutPage() {
             <div className="checkout-heading">
               <span className="eyebrow">Checkout</span>
               <h1>Xác nhận đơn hàng đá tinh khiết</h1>
-              <p>Kiểm tra thông tin giao hàng và chọn cách thanh toán phù hợp trước khi tạo đơn.</p>
+              <p>Kiểm tra thông tin nhận hàng và chọn cách thanh toán phù hợp trước khi tạo đơn.</p>
             </div>
 
             <div className="checkout-progress">
@@ -245,7 +245,7 @@ function CheckoutPage() {
 
             {!hasShippingInfo && (
               <div className="form-message form-message--error">
-                Thiếu thông tin giao hàng. Hãy quay lại bước đặt hàng để nhập đầy đủ trước khi thanh toán.
+                Thiếu thông tin nhận hàng. Hãy quay lại bước đặt hàng để nhập đầy đủ trước khi thanh toán.
               </div>
             )}
 
@@ -331,3 +331,4 @@ function CheckoutPage() {
 }
 
 export default CheckoutPage;
+

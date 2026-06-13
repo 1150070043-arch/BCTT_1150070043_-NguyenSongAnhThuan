@@ -1,4 +1,4 @@
-import {
+﻿import {
   Boxes,
   ClipboardList,
   Home,
@@ -37,7 +37,7 @@ const workspaceNav = {
     { to: '/', label: 'Trang chủ', icon: Home, end: true },
     { to: '/provider', label: 'Tổng quan', icon: LayoutDashboard, end: true },
     { to: '/provider/packages', label: 'Sản phẩm', icon: Boxes },
-    { to: '/provider/orders', label: 'Xử lý đơn', icon: Truck },
+    { to: '/provider/orders', label: 'Kho vận', icon: ReceiptText },
   ],
   Admin: [
     { to: '/', label: 'Trang chủ', icon: Home, end: true },
@@ -199,3 +199,4 @@ function Header() {
 }
 
 export default Header;
+

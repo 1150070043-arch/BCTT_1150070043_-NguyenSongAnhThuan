@@ -147,6 +147,39 @@ namespace WebsiteServiceEcommerce.API.Controllers
         }
 
         // POST: api/Auth/reset-password
+        [HttpPost("verify-reset-code")]
+        public async Task<ActionResult<ApiResponse<object>>> VerifyResetCode(VerifyResetCodeDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.Code))
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Vui lòng nhập email và mã xác nhận."
+                });
+            }
+
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+            var userExists = await _context.Users.AnyAsync(u => u.Email == normalizedEmail && u.IsActive);
+            var key = GetPasswordResetCacheKey(normalizedEmail);
+
+            if (!userExists || !_cache.TryGetValue<string>(key, out var expectedCode) || expectedCode != dto.Code.Trim())
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Mã xác nhận không đúng hoặc đã hết hạn."
+                });
+            }
+
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Mã xác nhận hợp lệ. Bạn có thể nhập mật khẩu mới."
+            });
+        }
+
+        // POST: api/Auth/reset-password
         [HttpPost("reset-password")]
         public async Task<ActionResult<ApiResponse<object>>> ResetPassword(ResetPasswordDto dto)
         {

@@ -22,7 +22,7 @@ import { clearAuth, getAuth } from '../utils/authStorage.js';
 const reportChildren = [
   { to: '/admin/reports?tab=revenue', label: 'Doanh thu', icon: BarChart3 },
   { to: '/admin/reports?tab=orders', label: 'Đơn & thanh toán', icon: ClipboardCheck },
-  { to: '/admin/reports?tab=operations', label: 'Kho vận & hỗ trợ', icon: PackageCheck },
+  { to: '/admin/reports?tab=operations', label: 'Kho & hỗ trợ', icon: PackageCheck },
 ];
 
 const navItems = [

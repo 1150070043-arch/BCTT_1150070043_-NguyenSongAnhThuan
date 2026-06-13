@@ -1,4 +1,4 @@
-import { ShieldCheck, Snowflake, Sparkles, Truck } from 'lucide-react';
+﻿import { ShieldCheck, Snowflake, Sparkles, Truck } from 'lucide-react';
 
 function AuthLayout({ eyebrow, title, children }) {
   return (
@@ -21,9 +21,9 @@ function AuthLayout({ eyebrow, title, children }) {
               <Sparkles size={16} />
               Trung tâm vận hành
             </span>
-            <h2>Quản lý đơn hàng, tồn kho và giao hàng trong một cổng.</h2>
+            <h2>Quản lý đơn hàng, tồn kho và bàn giao trong một cổng.</h2>
             <p>
-              Tài khoản của bạn được điều hướng đúng vai trò: khách hàng, kho vận hoặc quản trị viên.
+              Tài khoản của bạn được điều hướng đúng vai trò: khách hàng, kho hoặc quản trị viên.
             </p>
           </div>
 
@@ -52,3 +52,4 @@ function AuthLayout({ eyebrow, title, children }) {
 }
 
 export default AuthLayout;
+

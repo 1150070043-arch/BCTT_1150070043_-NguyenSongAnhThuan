@@ -16,6 +16,11 @@ const authApi = {
     return response.data;
   },
 
+  verifyResetCode: async (payload) => {
+    const response = await apiClient.post('/Auth/verify-reset-code', payload);
+    return response.data;
+  },
+
   resetPassword: async (payload) => {
     const response = await apiClient.post('/Auth/reset-password', payload);
     return response.data;

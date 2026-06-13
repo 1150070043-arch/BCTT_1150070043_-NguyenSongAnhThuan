@@ -164,23 +164,6 @@ function OrderDetailPage() {
                 </section>
 
                 <section className="work-panel">
-                  <h2>Thông tin giao hàng</h2>
-                  <p><strong>Người phụ trách:</strong> {order.assignedStaffName || 'Chưa gán'}</p>
-                  <p><strong>Tuyến giao:</strong> {order.deliveryRoute || 'Chưa gán'}</p>
-                  <p><strong>Mã vận đơn:</strong> {order.trackingCode || 'Chưa có'}</p>
-                  {order.estimatedDeliveryAt && (
-                    <p><strong>Dự kiến giao:</strong> {new Date(order.estimatedDeliveryAt).toLocaleString('vi-VN')}</p>
-                  )}
-                  <p><strong>Ghi chú giao hàng:</strong> {order.deliveryNote || 'Không có'}</p>
-                  {order.deliveryFailureReason && (
-                    <p><strong>Lý do không giao được:</strong> {order.deliveryFailureReason}</p>
-                  )}
-                  {order.deliveryProofImageUrl && (
-                    <p><strong>Biên nhận/ảnh giao hàng:</strong> <a href={order.deliveryProofImageUrl} target="_blank" rel="noreferrer">Xem minh chứng</a></p>
-                  )}
-                </section>
-
-                <section className="work-panel">
                   <h2>Lịch sử trạng thái</h2>
                   {(order.statusHistory || []).length === 0 ? (
                     <p>Chưa có lịch sử trạng thái.</p>
@@ -204,21 +187,6 @@ function OrderDetailPage() {
                       <p>{Number(item.lineTotal).toLocaleString('vi-VN')}đ</p>
                     </article>
                   ))}
-                </section>
-
-                <section className="work-panel">
-                  <h2>Cập nhật giao hàng</h2>
-                  {(order.deliveries || []).length === 0 ? (
-                    <p>Chưa có cập nhật giao hàng.</p>
-                  ) : (
-                    (order.deliveries || []).map((delivery) => (
-                      <article className="mini-row" key={delivery.id}>
-                        <strong>{delivery.previewLink}</strong>
-                        <span>{delivery.status}</span>
-                        <p>{delivery.notes || 'Không có ghi chú'}</p>
-                      </article>
-                    ))
-                  )}
                 </section>
 
                 <section className="work-panel">

@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using System.Security.Claims;
+using System.Text;
 using WebsiteServiceEcommerce.API.Data;
 using WebsiteServiceEcommerce.API.DTOs;
 using WebsiteServiceEcommerce.API.Helpers;
@@ -78,11 +80,12 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 }
             }
 
-            var product = await _context.Packages
+            var requestedProduct = await _context.Packages
                 .Include(p => p.Provider)
+                    .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == dto.PackageId && p.IsActive && p.IsApproved);
 
-            if (product == null)
+            if (requestedProduct == null)
             {
                 return NotFound(new ApiResponse<object>
                 {
@@ -91,15 +94,18 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 });
             }
 
+            var product = await ResolveFulfillmentProduct(requestedProduct, dto.Quantity, shippingAddress);
             if (product.StockQuantity < dto.Quantity)
             {
+                var totalAvailable = await GetTotalBranchStock(requestedProduct);
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
-                    Message = $"Sản phẩm chỉ còn {product.StockQuantity} {product.Unit} trong kho."
+                    Message = totalAvailable > 0
+                        ? $"San pham con tong {totalAvailable} {requestedProduct.Unit} nhung chua kho van nao du so luong {dto.Quantity} cho mot don."
+                        : "San pham hien het hang o tat ca kho van."
                 });
             }
-
             var totalPrice = product.Price * dto.Quantity;
             var order = new Order
             {
@@ -158,7 +164,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 CreatedAt = DateTime.UtcNow
             });
 
-            AddStatusHistory(order.Id, string.Empty, OrderWorkflow.Pending, actorUserId, "Customer", "Khach hang tao don hang.");
+            AddStatusHistory(order.Id, string.Empty, OrderWorkflow.Pending, actorUserId, "Customer", $"Khach hang tao don hang. Kho van xu ly: {product.Provider.CompanyName}.");
 
             _context.Notifications.Add(new Notification
             {
@@ -355,18 +361,27 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "Don hang cu khong co san pham de dat lai." });
             }
 
-            var product = await _context.Packages
+            var requestedProduct = await _context.Packages
                 .Include(p => p.Provider)
+                    .ThenInclude(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id == originalItem.PackageId && p.IsActive && p.IsApproved);
 
-            if (product == null)
+            if (requestedProduct == null)
             {
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "San pham trong don cu hien khong kha dung." });
             }
 
+            var product = await ResolveFulfillmentProduct(requestedProduct, originalItem.Quantity, original.ShippingAddress);
             if (product.StockQuantity < originalItem.Quantity)
             {
-                return BadRequest(new ApiResponse<object> { Success = false, Message = $"San pham chi con {product.StockQuantity} {product.Unit} trong kho." });
+                var totalAvailable = await GetTotalBranchStock(requestedProduct);
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = totalAvailable > 0
+                        ? $"San pham con tong {totalAvailable} {requestedProduct.Unit} nhung chua kho van nao du so luong {originalItem.Quantity} cho mot don."
+                        : "San pham hien het hang o tat ca kho van."
+                });
             }
 
             var totalPrice = product.Price * originalItem.Quantity;
@@ -663,6 +678,94 @@ namespace WebsiteServiceEcommerce.API.Controllers
         {
             var normalized = phone.Replace(" ", "").Replace("-", "").Replace("+", "");
             return normalized.Length is >= 9 and <= 12 && normalized.All(char.IsDigit);
+        }
+
+        private async Task<Package> ResolveFulfillmentProduct(Package requestedProduct, int quantity, string shippingAddress)
+        {
+            var candidates = await GetBranchProductCandidates(requestedProduct).ToListAsync();
+            if (candidates.Count == 0)
+            {
+                return requestedProduct;
+            }
+
+            var preferredArea = DetectBranchArea(shippingAddress);
+            return candidates
+                .OrderByDescending(p => p.StockQuantity >= quantity)
+                .ThenByDescending(p => string.IsNullOrWhiteSpace(preferredArea) ? 0 : GetBranchMatchScore(p, preferredArea))
+                .ThenByDescending(p => p.Id == requestedProduct.Id)
+                .ThenByDescending(p => p.StockQuantity)
+                .ThenBy(p => p.ProviderId)
+                .First();
+        }
+
+        private async Task<int> GetTotalBranchStock(Package requestedProduct)
+        {
+            return await GetBranchProductCandidates(requestedProduct).SumAsync(p => p.StockQuantity);
+        }
+
+        private IQueryable<Package> GetBranchProductCandidates(Package requestedProduct)
+        {
+            var sku = requestedProduct.Sku.Trim();
+            var name = requestedProduct.Name.Trim();
+            var category = requestedProduct.Category.Trim();
+            var unit = requestedProduct.Unit.Trim();
+
+            var query = _context.Packages
+                .Include(p => p.Provider)
+                    .ThenInclude(p => p.User)
+                .Where(p => p.IsActive && p.IsApproved && p.Provider.IsVerified);
+
+            if (!string.IsNullOrWhiteSpace(sku))
+            {
+                return query.Where(p => p.Sku == sku);
+            }
+
+            return query.Where(p =>
+                p.Name == name &&
+                p.Category == category &&
+                p.Unit == unit);
+        }
+
+        private static string DetectBranchArea(string value)
+        {
+            var normalized = NormalizeSearchText(value);
+            if (normalized.Contains("thu duc")) return "thu duc";
+            if (normalized.Contains("phu nhuan")) return "phu nhuan";
+            return string.Empty;
+        }
+
+        private static int GetBranchMatchScore(Package product, string preferredArea)
+        {
+            var providerText = NormalizeSearchText(string.Join(" ",
+                product.Provider.CompanyName,
+                product.Provider.Description,
+                product.Provider.User.FullName,
+                product.Provider.User.Address,
+                product.Provider.User.Email));
+
+            return providerText.Contains(preferredArea) ? 1 : 0;
+        }
+
+        private static string NormalizeSearchText(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+            var normalized = value.Trim().ToLowerInvariant().Normalize(NormalizationForm.FormD);
+            var builder = new StringBuilder(normalized.Length);
+
+            foreach (var ch in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                {
+                    builder.Append(ch);
+                }
+            }
+
+            return builder
+                .ToString()
+                .Normalize(NormalizationForm.FormC)
+                .Replace("đ", "d")
+                .Replace("Đ", "d");
         }
 
         private static string NormalizeDeliveryMethod(string? method)

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getApiErrorMessage } from '../api/client.js';
 import authApi from '../api/auth.js';
@@ -109,7 +109,7 @@ function ProfilePage() {
     try {
       const payload = {
         ...addressForm,
-        label: addressForm.label.trim() || 'Địa chỉ giao hàng',
+        label: addressForm.label.trim() || 'Địa chỉ nhận hàng',
         recipientName: addressForm.recipientName.trim(),
         phoneNumber: addressForm.phoneNumber.trim(),
         addressLine: addressForm.addressLine.trim(),
@@ -213,7 +213,7 @@ function ProfilePage() {
                 </form>
 
                 <form className="work-panel auth-form" onSubmit={saveAddress}>
-                  <h2>{editingId ? 'Sửa địa chỉ giao hàng' : 'Thêm địa chỉ giao hàng'}</h2>
+                  <h2>{editingId ? 'Sửa địa chỉ nhận hàng' : 'Thêm địa chỉ nhận hàng'}</h2>
                   <div className="admin-form-grid">
                     <label>
                       Nhãn địa chỉ
@@ -251,13 +251,13 @@ function ProfilePage() {
                 <section className="work-panel">
                   <h2>Địa chỉ đã lưu</h2>
                   {addresses.length === 0 ? (
-                    <p>Chưa có địa chỉ giao hàng đã lưu.</p>
+                    <p>Chưa có địa chỉ nhận hàng đã lưu.</p>
                   ) : (
                     <div className="saved-address-list">
                       {addresses.map((address) => (
                         <article className={`saved-address-card ${address.isDefault ? 'is-default' : ''}`} key={address.id}>
                           <div>
-                            <strong>{address.label || 'Địa chỉ giao hàng'} {address.isDefault ? '· Mặc định' : ''}</strong>
+                            <strong>{address.label || 'Địa chỉ nhận hàng'} {address.isDefault ? '· Mặc định' : ''}</strong>
                             <p>{address.recipientName} · {address.phoneNumber}</p>
                             <p>{address.addressLine}</p>
                           </div>
@@ -284,3 +284,4 @@ function ProfilePage() {
 }
 
 export default ProfilePage;
+

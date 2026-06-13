@@ -95,16 +95,7 @@ namespace WebsiteServiceEcommerce.API.Helpers
                 return true;
             }
 
-            return current switch
-            {
-                Pending => next is Confirmed or Cancelled,
-                Confirmed => next is Preparing or Cancelled,
-                Preparing => next is Shipping,
-                Shipping => next is Delivered or DeliveryFailed,
-                Delivered => next == Completed,
-                DeliveryFailed => next is Shipping or Cancelled,
-                _ => false
-            };
+            return true;
         }
 
         public static bool CanSubmitDeliveryUpdate(string? currentStatus)

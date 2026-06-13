@@ -19,9 +19,11 @@ const adminApi = {
     await apiClient.put(`/admin/users/${id}/password/default`, null, { headers: authHeader() })
   ).data,
   pendingProviders: async () => (await apiClient.get('/admin/providers/pending', { headers: authHeader() })).data,
+  providers: async () => (await apiClient.get('/admin/providers', { headers: authHeader() })).data,
   verifyProvider: async (id) => (await apiClient.put(`/admin/providers/${id}/verify`, null, { headers: authHeader() })).data,
   pendingPackages: async () => (await apiClient.get('/admin/packages/pending', { headers: authHeader() })).data,
   packages: async (filters = {}) => (await apiClient.get('/admin/packages', { params: filters, headers: authHeader() })).data,
+  createPackage: async (payload) => (await apiClient.post('/admin/packages', payload, { headers: authHeader() })).data,
   updatePackage: async (id, payload) => (await apiClient.put(`/admin/packages/${id}`, payload, { headers: authHeader() })).data,
   hidePackage: async (id) => (await apiClient.delete(`/admin/packages/${id}`, { headers: authHeader() })).data,
   uploadProductImage: async (id, file) => {

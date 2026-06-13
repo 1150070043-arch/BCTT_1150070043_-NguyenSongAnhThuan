@@ -10,8 +10,17 @@ Hệ thống quản lý bán đá Ngọc Anh Phú Thịnh 9 gồm 2 phần:
 Các vai trò chính:
 
 - `Customer`: xem sản phẩm, đặt hàng, thanh toán, theo dõi đơn, hủy/hoàn tất đơn, đánh giá.
-- `Provider`: quản lý sản phẩm/kho vận, xử lý đơn, cập nhật giao hàng.
-- `Admin`: quản lý người dùng, nhà cung cấp, sản phẩm, đơn hàng, báo cáo, audit log.
+- `Provider`: tài khoản kho vận chi nhánh, quản lý sản phẩm, nhập kho, kiểm tồn và xử lý đơn cần xuất.
+- `Admin`: admin tổng, quản lý người dùng, kho vận, sản phẩm, đơn hàng, báo cáo, audit log.
+
+Mô hình vận hành hiện tại có 4 nhóm tài khoản thực tế:
+
+- Khách hàng.
+- Admin tổng.
+- Kho vận chi nhánh Thủ Đức.
+- Kho vận chi nhánh Phú Nhuận.
+
+Hai kho vận đều dùng role kỹ thuật là `Provider`, nhưng là 2 tài khoản khác nhau và có tồn kho riêng.
 
 ## 2. Yêu Cầu Môi Trường
 
@@ -122,9 +131,9 @@ Nếu database có dữ liệu mẫu, có thể dùng các tài khoản sau. M�
 | `admin@websiteservice.vn` | Admin | Quản trị hệ thống |
 | `customer1@example.com` | Customer | Khách hàng |
 | `customer2@example.com` | Customer | Khách hàng |
-| `minhanh@studio.com` | Provider | Kho vận/nhà cung cấp |
-| `bluepixel@agency.com` | Provider | Kho vận/nhà cung cấp |
-| `thanhvu@dev.com` | Provider | Kho vận/nhà cung cấp |
+| `minhanh@studio.com` | Provider | Kho vận/chi nhánh |
+| `bluepixel@agency.com` | Provider | Kho vận/chi nhánh |
+| `thanhvu@dev.com` | Provider | Kho vận/chi nhánh |
 
 Nếu tài khoản mẫu không tồn tại, đăng ký tài khoản Customer tại:
 
@@ -132,7 +141,10 @@ Nếu tài khoản mẫu không tồn tại, đăng ký tài khoản Customer t�
 http://localhost:5173/#/register
 ```
 
-Tài khoản Admin/Provider được tạo từ màn hình Admin hoặc thêm trực tiếp trong database.
+Tài khoản Admin/Provider được tạo từ màn hình Admin hoặc thêm trực tiếp trong database. Khi tạo kho vận thực tế, nên đặt tên rõ chi nhánh, ví dụ:
+
+- `Ngoc Anh Phu Thinh 9 - Phan phoi nuoc da chi nhanh Thu Duc`
+- `Ngoc Anh Phu Thinh 9 - Phan phoi nuoc da chi nhanh Phu Nhuan`
 
 ## 8. Luồng Sử Dụng Cho Khách Hàng
 
@@ -145,7 +157,7 @@ http://localhost:5173/#/products
 
 2. Chọn sản phẩm, xem chi tiết.
 3. Bấm đặt sản phẩm.
-4. Nhập thông tin giao hàng.
+4. Nhập thông tin bàn giao.
 5. Chọn phương thức thanh toán:
 
 - COD.
@@ -154,20 +166,43 @@ http://localhost:5173/#/products
 - Ví/thẻ mô phỏng.
 
 6. Xác nhận đơn hàng.
-7. Theo dõi đơn tại:
+7. Backend tự chọn kho vận xử lý theo tồn kho và khu vực giao hàng.
+8. Theo dõi đơn tại:
 
 ```txt
 http://localhost:5173/#/orders/my
 ```
 
-8. Xem chi tiết đơn, hủy đơn nếu còn ở trạng thái cho phép, hoặc hoàn tất khi đã giao.
+9. Xem chi tiết đơn, hủy đơn nếu còn ở trạng thái cho phép, hoặc hoàn tất khi đã bàn giao.
+
+### Quy Tắc Chọn Kho Vận Khi Đặt Hàng
+
+Hệ thống hỗ trợ nhiều kho vận cùng bán một sản phẩm bằng cách dùng cùng `SKU` cho sản phẩm ở các chi nhánh khác nhau.
+
+Ví dụ:
+
+| Kho vận | SKU | Tồn kho |
+| --- | --- | --- |
+| Chi nhánh Thủ Đức | `ICE-VIEN-5KG` | 100 |
+| Chi nhánh Phú Nhuận | `ICE-VIEN-5KG` | 50 |
+
+Khi khách đặt hàng:
+
+- Nếu địa chỉ giao có `Thủ Đức`, hệ thống ưu tiên kho vận Thủ Đức.
+- Nếu địa chỉ giao có `Phú Nhuận`, hệ thống ưu tiên kho vận Phú Nhuận.
+- Nếu kho ưu tiên hết hàng hoặc không đủ số lượng cho một đơn, hệ thống tự chuyển qua kho vận khác còn đủ tồn.
+- Nếu không kho vận nào đủ số lượng, API chặn tạo đơn và báo không đủ hàng.
+- Tồn kho được trừ ở đúng sản phẩm thuộc kho vận được chọn.
+- Khi hủy đơn hợp lệ, tồn kho được hoàn lại đúng kho vận đã xử lý đơn.
+
+Lưu ý: `SKU` được phép trùng giữa 2 kho vận khác nhau, nhưng không được trùng trong cùng một kho vận.
 
 ## 9. Luồng Thanh Toán
 
 ### COD
 
 - Đơn được tạo với trạng thái thanh toán `Pending`.
-- Khi giao thành công và thu tiền, Admin/Provider có thể xác nhận đã thu COD.
+- Khi bàn giao thành công và thu tiền, Admin/Provider có thể xác nhận đã thu COD.
 
 ### Chuyển Khoản
 
@@ -207,11 +242,13 @@ Các màn hình chính:
 
 - Dashboard tổng quan.
 - Quản lý người dùng.
-- Quản lý nhà cung cấp/kho vận.
+- Quản lý kho vận.
 - Duyệt và quản lý sản phẩm.
 - Quản lý đơn hàng.
 - Báo cáo doanh thu, COD, chuyển khoản, hủy đơn.
 - Audit log thao tác quản trị.
+
+Khi tạo sản phẩm từ Admin, cần chọn `Kho vận phụ trách`. Nếu cùng một mặt hàng có ở cả Thủ Đức và Phú Nhuận, tạo 2 sản phẩm có cùng `SKU`, mỗi sản phẩm chọn một kho vận khác nhau và nhập tồn riêng.
 
 Trang đơn hàng Admin:
 
@@ -228,10 +265,10 @@ Pending -> Confirmed -> Preparing -> Shipping -> Delivered -> Completed
 Một số nhánh đặc biệt:
 
 - Có thể hủy đơn ở trạng thái phù hợp.
-- Có thể đánh dấu giao thất bại.
+- Có thể ghi nhận lỗi bàn giao.
 - Không cho sửa tiếp khi đơn đã `Completed` hoặc `Cancelled`, trừ việc giữ nguyên trạng thái.
 
-## 11. Luồng Cho Provider
+## 11. Luồng Cho Kho Vận
 
 Truy cập:
 
@@ -239,14 +276,16 @@ Truy cập:
 http://localhost:5173/#/provider
 ```
 
-Provider có thể:
+Kho vận có thể:
 
 - Xem dashboard kho vận.
-- Tạo và quản lý sản phẩm.
-- Theo dõi đơn được giao cho provider.
-- Cập nhật trạng thái xử lý/giao hàng.
-- Gửi thông tin bàn giao/giao hàng.
+- Tạo sản phẩm và nhập số lượng tồn ban đầu.
+- Theo dõi tồn kho từng sản phẩm.
+- Theo dõi đơn cần xuất kho.
+- Cập nhật trạng thái xử lý đơn: xác nhận, chuẩn bị, xuất kho, bàn giao.
 - Xác nhận thu COD nếu đúng điều kiện.
+
+Kho vận chỉ thấy và xử lý đơn được gán cho chi nhánh của mình. Ví dụ tài khoản kho vận Thủ Đức không thấy đơn đã được hệ thống gán cho kho vận Phú Nhuận.
 
 ## 12. Các API Quan Trọng
 
@@ -272,6 +311,7 @@ GET    /api/vnpay/callback
 GET    /api/vnpay/ipn
 
 GET    /api/admin/dashboard
+GET    /api/admin/providers
 GET    /api/admin/orders
 PUT    /api/admin/orders/{id}/status
 GET    /api/admin/reports
@@ -332,3 +372,4 @@ npm run build
 cd BE
 dotnet build
 ```
+

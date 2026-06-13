@@ -90,7 +90,8 @@ export function getNextProviderStatuses(status) {
 
 export function getAllowedAdminStatuses(status) {
   const normalized = normalizeOrderStatus(status);
-  const nextStatuses = NEXT_STATUS_MAP[normalized] || [];
-  const values = [normalized, ...nextStatuses];
-  return ORDER_STATUS_OPTIONS.filter((option) => values.includes(option.value));
+  if (normalized === 'Completed' || normalized === 'Cancelled') {
+    return ORDER_STATUS_OPTIONS.filter((option) => option.value === normalized);
+  }
+  return ORDER_STATUS_OPTIONS;
 }

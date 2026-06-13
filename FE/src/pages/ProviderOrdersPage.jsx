@@ -19,7 +19,7 @@ function ProviderOrdersPage() {
       if (response.success) setOrders(response.data || []);
       else setMessage(response.message || 'Không thể tải đơn hàng.');
     } catch (err) {
-      setMessage(getApiErrorMessage(err, 'Vui lòng đăng nhập tài khoản kho vận.'));
+      setMessage(getApiErrorMessage(err, 'Vui lòng đăng nhập tài khoản kho.'));
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ function ProviderOrdersPage() {
         <section className="section dashboard-section">
           <div className="container">
             <span className="eyebrow">Kho vận</span>
-            <h1>Đơn hàng cần xử lý</h1>
+            <h1>Đơn hàng cần xử lý xuất kho</h1>
             {message && <p className="form-message">{message}</p>}
             {loading && <div className="loading-state"><span className="spinner" /><p>Đang tải đơn hàng...</p></div>}
             {!loading && orders.length === 0 && <div className="empty-state"><p>Chưa có đơn hàng cần xử lý.</p></div>}
@@ -65,11 +65,7 @@ function ProviderOrdersPage() {
                       <p>{order.customerName}</p>
                       <strong>{Number(order.totalPrice).toLocaleString('vi-VN')}đ</strong>
                       <p>{order.requirements || 'Không có ghi chú.'}</p>
-                      <p>Phụ trách: {order.assignedStaffName || 'Chưa gán'} · Tuyến: {order.deliveryRoute || 'Chưa gán'}</p>
-                      {order.estimatedDeliveryAt && (
-                        <p>Dự kiến giao: {new Date(order.estimatedDeliveryAt).toLocaleString('vi-VN')}</p>
-                      )}
-                      {order.deliveryFailureReason && <p>Lý do chưa giao được: {order.deliveryFailureReason}</p>}
+                      <p>Đơn này đã được giữ tồn khi khách đặt. Kho vận chỉ cần kiểm hàng và cập nhật trạng thái xuất.</p>
                       <div className="inline-actions">
                         {nextStatuses.map((status) => (
                           <button
@@ -83,7 +79,6 @@ function ProviderOrdersPage() {
                           </button>
                         ))}
                         <Link className="btn btn--ghost" to={`/provider/orders/${order.id}`}>Chi tiết</Link>
-                        <Link className="btn btn--primary" to={`/provider/orders/${order.id}/delivery`}>Cập nhật giao hàng</Link>
                       </div>
                     </article>
                   );

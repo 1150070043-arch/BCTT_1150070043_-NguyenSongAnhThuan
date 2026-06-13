@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import adminApi from '../api/admin.js';
 import AdminDatePicker from '../components/AdminDatePicker.jsx';
@@ -187,7 +187,7 @@ function AdminReportsPage() {
   };
 
   return (
-    <AdminShell title="Báo cáo vận hành" subtitle="Theo dõi doanh thu, thanh toán, kho vận và chăm sóc sau bán theo từng nhóm nội dung.">
+    <AdminShell title="Báo cáo vận hành" subtitle="Theo dõi doanh thu, thanh toán, kho và chăm sóc sau bán theo từng nhóm nội dung.">
       {message && <p className="admin-message">{message}</p>}
 
       <section className="admin-panel">
@@ -311,12 +311,12 @@ function AdminReportsPage() {
           {activeTab === 'operations' && (
             <>
               <article className="admin-panel admin-flow-explain">
-                <div className="admin-panel__title"><h2>Luồng kho vận</h2><span>cách hiểu nhanh</span></div>
+                <div className="admin-panel__title"><h2>Luồng kho</h2><span>cách hiểu nhanh</span></div>
                 <ol>
-                  <li><strong>Kho vận đăng ký</strong><span>Admin xác minh tài khoản kho vận trước khi họ được quản lý sản phẩm.</span></li>
-                  <li><strong>Kho vận tạo sản phẩm</strong><span>Sản phẩm mới ở trạng thái chờ duyệt để admin kiểm tra giá, ảnh, tồn kho.</span></li>
+                  <li><strong>Kho đăng ký</strong><span>Admin xác minh tài khoản kho trước khi họ được quản lý sản phẩm.</span></li>
+                  <li><strong>Kho tạo sản phẩm</strong><span>Sản phẩm mới ở trạng thái chờ duyệt để admin kiểm tra giá, ảnh, tồn kho.</span></li>
                   <li><strong>Admin duyệt sản phẩm</strong><span>Sản phẩm được mở bán, khách có thể đặt hàng.</span></li>
-                  <li><strong>Kho vận xử lý đơn</strong><span>Xác nhận, chuẩn bị, giao hàng, cập nhật giao thất bại hoặc đã giao.</span></li>
+                  <li><strong>Kho xử lý đơn</strong><span>Xác nhận, chuẩn bị, xuất kho, ghi nhận bàn giao hoặc lỗi bàn giao.</span></li>
                   <li><strong>Admin đối soát</strong><span>Theo dõi thanh toán, nhập/xuất kho thủ công và xử lý hỗ trợ sau bán.</span></li>
                 </ol>
               </article>
@@ -398,3 +398,4 @@ function AdminReportsPage() {
 }
 
 export default AdminReportsPage;
+

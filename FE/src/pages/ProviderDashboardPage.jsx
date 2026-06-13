@@ -14,8 +14,8 @@ function ProviderDashboardPage() {
             <div className="page-title-row">
               <div>
                 <span className="eyebrow">Kho vận</span>
-                <h1>Quản lý Ngọc Anh Phú Thịnh 9</h1>
-                <p>Quản lý sản phẩm đá tinh khiết, tồn kho và đơn hàng cần chuẩn bị giao.</p>
+                <h1>Quản lý kho Ngọc Anh Phú Thịnh 9</h1>
+                <p>Quản lý sản phẩm đá tinh khiết, kiểm tra tồn kho, nhập kho và xử lý đơn cần xuất kho.</p>
               </div>
               <NotificationBell />
             </div>
@@ -23,16 +23,16 @@ function ProviderDashboardPage() {
               <Link className="dashboard-card" to="/provider/orders">
                 <ReceiptText size={24} />
                 <span>Đơn hàng</span>
-                <strong>Xử lý</strong>
+                <strong>Cần xuất</strong>
               </Link>
               <Link className="dashboard-card" to="/provider/packages">
                 <Boxes size={24} />
-                <span>Sản phẩm</span>
-                <strong>Quản lý</strong>
+                <span>Tồn kho</span>
+                <strong>Kiểm tra</strong>
               </Link>
               <Link className="dashboard-card" to="/provider/packages/create">
                 <PackagePlus size={24} />
-                <span>Thêm sản phẩm</span>
+                <span>Nhập sản phẩm</span>
                 <strong>New</strong>
               </Link>
             </div>

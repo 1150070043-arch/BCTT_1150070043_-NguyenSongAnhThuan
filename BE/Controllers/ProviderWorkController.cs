@@ -61,11 +61,11 @@ namespace WebsiteServiceEcommerce.API.Controllers
 
             if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Sku) || string.IsNullOrWhiteSpace(dto.Unit) || dto.Price <= 0 || dto.DeliveryDays <= 0 || dto.StockQuantity < 0)
             {
-                return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "Tên sản phẩm, giá và thời gian giao hàng không hợp lệ." });
+                return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "Tên sản phẩm, giá và thông tin tồn kho không hợp lệ." });
             }
 
             var sku = dto.Sku.Trim();
-            var skuExists = await _context.Packages.AnyAsync(p => p.Sku == sku);
+            var skuExists = await _context.Packages.AnyAsync(p => p.ProviderId == providerId.Value && p.Sku == sku);
             if (skuExists)
             {
                 return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "SKU da ton tai." });
@@ -102,7 +102,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
                     package.StockQuantity,
                     package.StockQuantity,
                     "InitialStock",
-                    "Kho van tao san pham voi ton ban dau.",
+                    "Kho tạo sản phẩm với tồn ban đầu.",
                     GetUserId(),
                     "Provider");
                 await _context.SaveChangesAsync();
@@ -146,7 +146,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
             }
 
             var sku = dto.Sku.Trim();
-            var skuExists = await _context.Packages.AnyAsync(p => p.Id != id && p.Sku == sku);
+            var skuExists = await _context.Packages.AnyAsync(p => p.Id != id && p.ProviderId == providerId.Value && p.Sku == sku);
             if (skuExists)
             {
                 return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "SKU da ton tai." });
@@ -179,7 +179,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
                     stockDelta,
                     package.StockQuantity,
                     "ManualAdjustment",
-                    "Kho van dieu chinh ton san pham.",
+                    "Kho điều chỉnh tồn sản phẩm.",
                     GetUserId(),
                     "Provider");
             }
@@ -190,6 +190,69 @@ namespace WebsiteServiceEcommerce.API.Controllers
             {
                 Success = true,
                 Message = "Cập nhật sản phẩm thành công.",
+                Data = ToPackageDto(package)
+            });
+        }
+
+        [HttpPut("packages/{id}/stock")]
+        public async Task<ActionResult<ApiResponse<PackageDto>>> AdjustPackageStock(int id, InventoryAdjustmentDto dto)
+        {
+            var providerId = GetProviderId();
+            if (providerId == null)
+            {
+                return Unauthorized(new ApiResponse<PackageDto> { Success = false, Message = "Không tìm thấy thông tin kho." });
+            }
+
+            var package = await _context.Packages
+                .Include(p => p.Provider)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (package == null)
+            {
+                return NotFound(new ApiResponse<PackageDto> { Success = false, Message = "Không tìm thấy sản phẩm." });
+            }
+
+            if (package.ProviderId != providerId.Value)
+            {
+                return Forbid();
+            }
+
+            if (dto.Quantity <= 0)
+            {
+                return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "Số lượng nhập/xuất kho phải lớn hơn 0." });
+            }
+
+            var movementType = dto.MovementType == "StockOut" ? "StockOut" : "StockIn";
+            var quantityChange = movementType == "StockIn" ? dto.Quantity : -dto.Quantity;
+
+            if (package.StockQuantity + quantityChange < 0)
+            {
+                return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "Số lượng xuất vượt quá tồn kho hiện tại." });
+            }
+
+            package.StockQuantity += quantityChange;
+            package.UpdatedAt = DateTime.UtcNow;
+
+            var reason = string.IsNullOrWhiteSpace(dto.Reason)
+                ? (movementType == "StockIn" ? "Kho nhập kho thủ công." : "Kho xuất kho thủ công.")
+                : dto.Reason.Trim();
+
+            AddInventoryTransaction(
+                package.Id,
+                null,
+                quantityChange,
+                package.StockQuantity,
+                movementType,
+                reason,
+                GetUserId(),
+                "Provider");
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new ApiResponse<PackageDto>
+            {
+                Success = true,
+                Message = "Đã cập nhật tồn kho.",
                 Data = ToPackageDto(package)
             });
         }
@@ -237,57 +300,6 @@ namespace WebsiteServiceEcommerce.API.Controllers
             });
         }
 
-        [HttpPut("orders/{id}/delivery-assignment")]
-        public async Task<ActionResult<ApiResponse<object>>> UpdateDeliveryAssignment(int id, UpdateDeliveryAssignmentDto dto)
-        {
-            var providerId = GetProviderId();
-            if (providerId == null)
-            {
-                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Khong tim thay thong tin kho van." });
-            }
-
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
-            if (order == null)
-            {
-                return NotFound(new ApiResponse<object> { Success = false, Message = "Khong tim thay don hang." });
-            }
-
-            if (order.ProviderId != providerId.Value)
-            {
-                return Forbid();
-            }
-
-            var currentStatus = OrderWorkflow.Normalize(order.Status);
-            if (currentStatus is OrderWorkflow.Completed or OrderWorkflow.Cancelled)
-            {
-                return BadRequest(new ApiResponse<object> { Success = false, Message = "Don hang da dong, khong the gan giao hang." });
-            }
-
-            order.AssignedStaffName = dto.AssignedStaffName?.Trim() ?? string.Empty;
-            order.DeliveryRoute = dto.DeliveryRoute?.Trim() ?? string.Empty;
-            order.TrackingCode = dto.TrackingCode?.Trim() ?? string.Empty;
-            order.EstimatedDeliveryAt = dto.EstimatedDeliveryAt;
-            order.DeliveryNote = dto.DeliveryNote?.Trim() ?? string.Empty;
-            order.UpdatedAt = DateTime.UtcNow;
-
-            AddStatusHistory(order.Id, currentStatus, currentStatus, "Kho van cap nhat nguoi phu trach/tuyen giao.");
-            await _context.SaveChangesAsync();
-
-            return Ok(new ApiResponse<object>
-            {
-                Success = true,
-                Message = "Da cap nhat thong tin phu trach va tuyen giao.",
-                Data = new
-                {
-                    order.AssignedStaffName,
-                    order.DeliveryRoute,
-                    order.TrackingCode,
-                    order.EstimatedDeliveryAt,
-                    order.DeliveryNote
-                }
-            });
-        }
-
         [HttpPut("orders/{id}/status")]
         public async Task<ActionResult<ApiResponse<object>>> UpdateOrderStatus(int id, UpdateOrderStatusDto dto)
         {
@@ -319,7 +331,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
 
             if (!OrderWorkflow.CanProviderTransition(order.Status, nextStatus))
             {
-                return BadRequest(new ApiResponse<object> { Success = false, Message = "Trang thai tiep theo khong hop le cho kho van." });
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Trạng thái tiếp theo không hợp lệ cho kho." });
             }
 
             var previousStatus = OrderWorkflow.Normalize(order.Status);
@@ -330,7 +342,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
             {
                 await ConfirmCodIfNeeded(order.Id);
             }
-            AddStatusHistory(order.Id, previousStatus, nextStatus, dto.Note?.Trim() ?? "Kho van cap nhat trang thai don hang.");
+            AddStatusHistory(order.Id, previousStatus, nextStatus, dto.Note?.Trim() ?? "Kho cập nhật trạng thái đơn hàng.");
 
             _context.Notifications.Add(new Notification
             {
@@ -343,57 +355,6 @@ namespace WebsiteServiceEcommerce.API.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new ApiResponse<object> { Success = true, Message = "Cập nhật trạng thái đơn hàng thành công." });
-        }
-
-        [HttpPut("orders/{id}/delivery-failed")]
-        public async Task<ActionResult<ApiResponse<object>>> MarkDeliveryFailed(int id, FailDeliveryDto dto)
-        {
-            var providerId = GetProviderId();
-            if (providerId == null)
-            {
-                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Khong tim thay thong tin kho van." });
-            }
-
-            var reason = dto.Reason?.Trim() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(reason))
-            {
-                return BadRequest(new ApiResponse<object> { Success = false, Message = "Vui long nhap ly do khong giao duoc." });
-            }
-
-            var order = await _context.Orders.FirstOrDefaultAsync(o => o.Id == id);
-            if (order == null)
-            {
-                return NotFound(new ApiResponse<object> { Success = false, Message = "Khong tim thay don hang." });
-            }
-
-            if (order.ProviderId != providerId.Value)
-            {
-                return Forbid();
-            }
-
-            if (!OrderWorkflow.CanProviderTransition(order.Status, OrderWorkflow.DeliveryFailed))
-            {
-                return BadRequest(new ApiResponse<object> { Success = false, Message = "Chi co the bao khong giao duoc khi don dang giao." });
-            }
-
-            var previousStatus = OrderWorkflow.Normalize(order.Status);
-            order.Status = OrderWorkflow.DeliveryFailed;
-            order.DeliveryFailureReason = reason;
-            order.DeliveryNote = string.IsNullOrWhiteSpace(dto.Note) ? order.DeliveryNote : dto.Note.Trim();
-            order.UpdatedAt = DateTime.UtcNow;
-
-            AddStatusHistory(order.Id, previousStatus, OrderWorkflow.DeliveryFailed, $"Khong giao duoc: {reason}");
-            _context.Notifications.Add(new Notification
-            {
-                UserId = order.CustomerId,
-                Title = "Don hang chua giao duoc",
-                Content = $"Don hang #{order.Id} chua giao duoc. Ly do: {reason}",
-                CreatedAt = DateTime.UtcNow
-            });
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new ApiResponse<object> { Success = true, Message = "Da ghi nhan don hang khong giao duoc." });
         }
 
         private PackageDto ToPackageDto(Package package)
@@ -486,7 +447,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
             payment.PaidAt = DateTime.UtcNow;
             payment.ConfirmedAt = DateTime.UtcNow;
             payment.ConfirmedByUserId = GetUserId();
-            payment.PaymentNote = "Kho van xac nhan da thu COD khi giao hang.";
+            payment.PaymentNote = "Kho xác nhận đã thu COD khi bàn giao.";
         }
     }
 }

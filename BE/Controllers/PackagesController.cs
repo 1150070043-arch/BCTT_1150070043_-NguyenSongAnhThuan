@@ -82,7 +82,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 "featured" => query.OrderByDescending(p => p.IsFeatured).ThenByDescending(p => p.CreatedAt),
                 "rating-desc" => query.OrderByDescending(p => p.Provider.Rating),
                 "delivery-asc" => query.OrderBy(p => p.DeliveryDays),
-                _ => query.OrderByDescending(p => p.CreatedAt)
+                _ => query.OrderByDescending(p => p.IsFeatured).ThenByDescending(p => p.CreatedAt)
             };
 
             var packages = await query.ToListAsync();
@@ -164,6 +164,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
             }
 
             var providerId = int.Parse(providerIdClaim);
+            var sku = dto.Sku.Trim();
 
             // Validate provider exists
             var provider = await _context.Providers.FindAsync(providerId);
@@ -173,6 +174,15 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 {
                     Success = false,
                     Message = "Nhà cung cấp không tồn tại."
+                });
+            }
+
+            if (await _context.Packages.AnyAsync(p => p.ProviderId == providerId && p.Sku == sku))
+            {
+                return BadRequest(new ApiResponse<PackageDto>
+                {
+                    Success = false,
+                    Message = "SKU da ton tai trong kho van nay."
                 });
             }
 
@@ -187,7 +197,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 DeliveryDays = dto.DeliveryDays,
                 Revisions = dto.Revisions,
                 Features = JsonSerializer.Serialize(dto.Features),
-                Sku = dto.Sku,
+                Sku = sku,
                 Unit = dto.Unit,
                 StockQuantity = dto.StockQuantity,
                 ShortDescription = dto.ShortDescription,
@@ -288,6 +298,15 @@ namespace WebsiteServiceEcommerce.API.Controllers
             }
 
             var previousStock = package.StockQuantity;
+            var sku = dto.Sku.Trim();
+            if (await _context.Packages.AnyAsync(p => p.Id != id && p.ProviderId == providerId && p.Sku == sku))
+            {
+                return BadRequest(new ApiResponse<PackageDto>
+                {
+                    Success = false,
+                    Message = "SKU da ton tai trong kho van nay."
+                });
+            }
 
             // Update package
             package.Name = dto.Name;
@@ -297,7 +316,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
             package.DeliveryDays = dto.DeliveryDays;
             package.Revisions = dto.Revisions;
             package.Features = JsonSerializer.Serialize(dto.Features);
-            package.Sku = dto.Sku;
+            package.Sku = sku;
             package.Unit = dto.Unit;
             package.StockQuantity = dto.StockQuantity;
             package.ShortDescription = dto.ShortDescription;

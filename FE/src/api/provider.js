@@ -19,20 +19,16 @@ const providerApi = {
     const response = await apiClient.put(`/provider/packages/${id}`, payload, { headers: authHeader() });
     return response.data;
   },
+  adjustStock: async (id, payload) => {
+    const response = await apiClient.put(`/provider/packages/${id}/stock`, payload, { headers: authHeader() });
+    return response.data;
+  },
   orders: async () => {
     const response = await apiClient.get('/provider/orders', { headers: authHeader() });
     return response.data;
   },
   updateOrderStatus: async (id, status) => {
     const response = await apiClient.put(`/provider/orders/${id}/status`, { status }, { headers: authHeader() });
-    return response.data;
-  },
-  updateDeliveryAssignment: async (id, payload) => {
-    const response = await apiClient.put(`/provider/orders/${id}/delivery-assignment`, payload, { headers: authHeader() });
-    return response.data;
-  },
-  markDeliveryFailed: async (id, payload) => {
-    const response = await apiClient.put(`/provider/orders/${id}/delivery-failed`, payload, { headers: authHeader() });
     return response.data;
   },
   submitDelivery: async (payload) => {

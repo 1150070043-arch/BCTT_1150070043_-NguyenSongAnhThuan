@@ -246,6 +246,36 @@ public class AdminController : ControllerBase
             });
         }
 
+        [HttpGet("providers")]
+        public async Task<ActionResult<ApiResponse<List<object>>>> GetProviders()
+        {
+            var providers = await _context.Providers
+                .Include(p => p.User)
+                .OrderByDescending(p => p.IsVerified)
+                .ThenBy(p => p.CompanyName)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.CompanyName,
+                    p.Description,
+                    p.IsVerified,
+                    p.CreatedAt,
+                    UserName = p.User.FullName,
+                    p.User.Email,
+                    p.User.PhoneNumber,
+                    p.User.Address
+                })
+                .Cast<object>()
+                .ToListAsync();
+
+            return Ok(new ApiResponse<List<object>>
+            {
+                Success = true,
+                Message = "Lay danh sach kho van thanh cong.",
+                Data = providers
+            });
+        }
+
         [HttpPut("providers/{id}/verify")]
         public async Task<ActionResult<ApiResponse<object>>> VerifyProvider(int id)
         {
@@ -327,6 +357,89 @@ public class AdminController : ControllerBase
             });
         }
 
+        [HttpPost("packages")]
+        public async Task<ActionResult<ApiResponse<PackageDto>>> CreatePackage(CreatePackageDto dto)
+        {
+            var providerQuery = _context.Providers.AsQueryable();
+            var selectedProviderId = dto.ProviderId.GetValueOrDefault();
+            var provider = selectedProviderId > 0
+                ? await providerQuery.FirstOrDefaultAsync(p => p.Id == selectedProviderId && p.IsVerified)
+                : await providerQuery
+                    .OrderByDescending(p => p.IsVerified)
+                    .ThenBy(p => p.Id)
+                    .FirstOrDefaultAsync();
+
+            if (provider == null)
+            {
+                return BadRequest(new ApiResponse<PackageDto>
+                {
+                    Success = false,
+                    Message = "Chưa có tài khoản kho. Vui lòng tạo tài khoản kho trước khi thêm sản phẩm."
+                });
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Name) || string.IsNullOrWhiteSpace(dto.Sku) || string.IsNullOrWhiteSpace(dto.Unit) || dto.Price <= 0 || dto.StockQuantity < 0)
+            {
+                return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "Thông tin sản phẩm không hợp lệ." });
+            }
+
+            var sku = dto.Sku.Trim();
+            var skuExists = await _context.Packages.AnyAsync(p => p.ProviderId == provider.Id && p.Sku == sku);
+            if (skuExists)
+            {
+                return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "SKU đã tồn tại." });
+            }
+
+            var package = new Package
+            {
+                ProviderId = provider.Id,
+                Name = dto.Name.Trim(),
+                ShortDescription = dto.ShortDescription?.Trim() ?? string.Empty,
+                Description = dto.Description?.Trim() ?? string.Empty,
+                Price = dto.Price,
+                Category = string.IsNullOrWhiteSpace(dto.Category) ? "DaVien" : dto.Category,
+                DeliveryDays = dto.DeliveryDays <= 0 ? 1 : dto.DeliveryDays,
+                Revisions = dto.Revisions <= 0 ? 1 : dto.Revisions,
+                Features = JsonSerializer.Serialize(dto.Features ?? new List<string>()),
+                Sku = sku,
+                Unit = dto.Unit.Trim(),
+                StockQuantity = dto.StockQuantity,
+                ImageUrl = dto.ImageUrl?.Trim() ?? string.Empty,
+                IsFeatured = dto.IsFeatured,
+                IsActive = true,
+                IsApproved = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Packages.Add(package);
+            await _context.SaveChangesAsync();
+
+            if (package.StockQuantity > 0)
+            {
+                AddInventoryTransaction(
+                    package.Id,
+                    null,
+                    package.StockQuantity,
+                    package.StockQuantity,
+                    "InitialStock",
+                    "Admin tạo sản phẩm với tồn ban đầu.",
+                    GetUserId(),
+                    "Admin");
+            }
+
+            AddAuditLog("CreatePackage", "Product", package.Id, $"Tạo sản phẩm {package.Name}.", new { package.Sku, package.StockQuantity, package.IsFeatured });
+            await _context.SaveChangesAsync();
+            await _context.Entry(package).Reference(p => p.Provider).LoadAsync();
+            await _context.Entry(package).Collection(p => p.Images).LoadAsync();
+
+            return Ok(new ApiResponse<PackageDto>
+            {
+                Success = true,
+                Message = "Đã thêm sản phẩm mới.",
+                Data = ToPackageDto(package)
+            });
+        }
+
         [HttpPut("packages/{id}")]
         public async Task<ActionResult<ApiResponse<PackageDto>>> UpdatePackage(int id, UpdatePackageDto dto)
         {
@@ -346,7 +459,7 @@ public class AdminController : ControllerBase
             }
 
             var sku = dto.Sku.Trim();
-            var skuExists = await _context.Packages.AnyAsync(p => p.Id != id && p.Sku == sku);
+            var skuExists = await _context.Packages.AnyAsync(p => p.Id != id && p.ProviderId == package.ProviderId && p.Sku == sku);
             if (skuExists)
             {
                 return BadRequest(new ApiResponse<PackageDto> { Success = false, Message = "SKU da ton tai." });

@@ -1,4 +1,4 @@
-import { Coffee, Cuboid, PackageCheck, Snowflake, Sparkles, Utensils } from 'lucide-react';
+﻿import { Coffee, Cuboid, PackageCheck, Snowflake, Sparkles, Utensils } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const categories = [
@@ -18,7 +18,7 @@ const categories = [
   },
   {
     title: 'Đá cây',
-    text: 'Khối đá lớn cho bảo quản, vận chuyển lạnh và sự kiện.',
+    text: 'Khối đá lớn cho bảo quản, bảo quản lạnh lạnh và sự kiện.',
     icon: Cuboid,
     image: '/ice-products/da-cay-25kg.jpg',
     tone: 'navy',
@@ -83,3 +83,4 @@ function ProductCategories() {
 }
 
 export default ProductCategories;
+

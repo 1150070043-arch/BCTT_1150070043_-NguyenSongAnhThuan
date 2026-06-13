@@ -116,7 +116,7 @@ function AdminOrderDetailPage() {
   return (
     <AdminShell
       title={order ? `Đơn hàng #${order.id}` : `Đơn hàng #${id}`}
-      subtitle="Chi tiết đơn hàng, giao hàng, thanh toán và lịch sử trạng thái."
+      subtitle="Chi tiết đơn hàng, thanh toán, thông tin nhận hàng và lịch sử trạng thái."
       action={<Link className="btn btn--ghost" to="/admin/orders"><ArrowLeft size={17} />Danh sách đơn</Link>}
     >
       {message && <p className="admin-message">{message}</p>}
@@ -178,8 +178,8 @@ function AdminOrderDetailPage() {
             <article className="admin-panel">
               <div className="admin-panel__title">
                 <div>
-                  <span>{order.deliveryMethod || 'Standard'}</span>
-                  <h2>Giao hàng</h2>
+                  <span>Thông tin nhận hàng</span>
+                  <h2>Người nhận</h2>
                 </div>
                 <Truck size={22} />
               </div>
@@ -187,10 +187,6 @@ function AdminOrderDetailPage() {
                 <div><span>Người nhận</span><strong>{order.shippingName}</strong></div>
                 <div><span>SĐT nhận</span><strong>{order.shippingPhone}</strong></div>
                 <div><span>Địa chỉ</span><strong>{order.shippingAddress}</strong></div>
-                <div><span>Nhân viên phụ trách</span><strong>{order.assignedStaffName || 'Chưa gán'}</strong></div>
-                <div><span>Tuyến giao</span><strong>{order.deliveryRoute || 'Chưa gán'}</strong></div>
-                <div><span>Mã vận đơn</span><strong>{order.trackingCode || 'Chưa có'}</strong></div>
-                <div><span>Dự kiến giao</span><strong>{dateTime(order.estimatedDeliveryAt)}</strong></div>
               </div>
             </article>
 

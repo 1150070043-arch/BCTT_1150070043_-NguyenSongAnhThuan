@@ -1,4 +1,4 @@
-import {
+﻿import {
   ArrowRight,
   CheckCircle2,
   Clock,
@@ -151,7 +151,7 @@ function DashboardPage() {
               <article>
                 <span>03</span>
                 <strong>Theo dõi</strong>
-                <p>Xem trạng thái chuẩn bị, giao hàng và hoàn tất.</p>
+                <p>Xem trạng thái chuẩn bị, bàn giao và hoàn tất.</p>
               </article>
             </div>
 
@@ -206,3 +206,4 @@ function DashboardPage() {
 }
 
 export default DashboardPage;
+

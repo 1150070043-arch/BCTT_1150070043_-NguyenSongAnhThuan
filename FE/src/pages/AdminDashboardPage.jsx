@@ -81,7 +81,7 @@ function AdminDashboardPage() {
             <span>Back-office</span>
           </div>
           <ol className="admin-flow">
-            <li>Duyệt hoặc ẩn sản phẩm sau khi kho vận tạo.</li>
+            <li>Duyệt hoặc ẩn sản phẩm sau khi kho tạo.</li>
             <li>Cập nhật ảnh sản phẩm, giá, SKU, tồn kho và trạng thái nổi bật.</li>
             <li>Theo dõi đơn hàng và doanh thu đã thanh toán.</li>
           </ol>

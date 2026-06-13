@@ -1,4 +1,4 @@
-import { Eye, ShoppingCart, Star } from 'lucide-react';
+﻿import { Eye, ShoppingCart, Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const products = [
@@ -22,7 +22,7 @@ const products = [
   },
   {
     name: 'Đá cây công nghiệp',
-    desc: 'Khối lớn, bảo quản lạnh lâu cho vận chuyển.',
+    desc: 'Khối lớn, bảo quản lạnh lâu cho bảo quản lạnh.',
     price: '75.000đ',
     image: '/ice-products/da-cay-25kg.jpg',
   },
@@ -94,3 +94,4 @@ function FeaturedProducts() {
 }
 
 export default FeaturedProducts;
+

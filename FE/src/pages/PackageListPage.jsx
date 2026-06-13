@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { Filter, ImagePlus, PackageCheck, RefreshCw, Search, Snowflake, Truck } from 'lucide-react';
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
@@ -90,7 +90,7 @@ function PackageListPage() {
     ...categories.map((category) => ({ value: category, label: getCategoryLabel(category) })),
   ];
   const sortOptions = [
-    { value: '', label: 'Mới nhất' },
+    { value: '', label: 'Nổi bật trước' },
     { value: 'featured', label: 'Nổi bật' },
     { value: 'price-asc', label: 'Giá thấp đến cao' },
     { value: 'price-desc', label: 'Giá cao đến thấp' },
@@ -213,6 +213,7 @@ function PackageListPage() {
 
                         <div className="package-card__header">
                           <span className="package-category">{getCategoryLabel(product.category)}</span>
+                          {product.isFeatured && <span className="package-featured-badge">Nổi bật</span>}
                           <div className="provider-badge">
                             <PackageCheck size={14} />
                             Còn {product.stockQuantity}
@@ -269,3 +270,4 @@ function PackageListPage() {
 }
 
 export default PackageListPage;
+

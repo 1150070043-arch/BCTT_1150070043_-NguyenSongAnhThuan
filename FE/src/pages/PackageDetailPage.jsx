@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { CheckCircle2, ImagePlus, PackageCheck, ShoppingCart, Snowflake, Truck } from 'lucide-react';
 import Header from '../components/Header.jsx';
@@ -150,7 +150,7 @@ function PackageDetailPage() {
                       </span>
                       <span>
                         <Truck size={16} />
-                        {product.deliveryDays <= 1 ? 'Giao trong ngày' : `${product.deliveryDays} ngày`}
+                        {product.deliveryDays <= 1 ? 'Có sẵn trong ngày' : `${product.deliveryDays} ngày`}
                       </span>
                     </div>
                   </div>
@@ -169,13 +169,13 @@ function PackageDetailPage() {
                 </div>
 
                 <div className="package-detail-section">
-                  <h2>Quy trình đặt và giao hàng</h2>
+                  <h2>Quy trình đặt và bàn giao</h2>
                   <div className="process-steps">
                     <div className="process-step">
                       <span className="step-number">1</span>
                       <div>
                         <h4>Chọn số lượng</h4>
-                        <p>Nhập số lượng {product.unit} cần giao và ghi chú thời gian nhận hàng.</p>
+                        <p>Nhập số lượng {product.unit} cần mua và ghi chú thời gian nhận hàng.</p>
                       </div>
                     </div>
                     <div className="process-step">
@@ -188,8 +188,8 @@ function PackageDetailPage() {
                     <div className="process-step">
                       <span className="step-number">3</span>
                       <div>
-                        <h4>Kho vận chuẩn bị</h4>
-                        <p>Đơn được ghi nhận, tồn kho được cập nhật và chuẩn bị giao.</p>
+                        <h4>Kho chuẩn bị</h4>
+                        <p>Đơn được ghi nhận, tồn kho được cập nhật và kho chuẩn bị xuất.</p>
                       </div>
                     </div>
                   </div>
@@ -214,7 +214,7 @@ function PackageDetailPage() {
                     <div className="highlight-item">
                       <Truck size={20} />
                       <div>
-                        <span>Giao hàng</span>
+                        <span>Bàn giao</span>
                         <strong>{product.deliveryDays <= 1 ? 'Trong ngày' : `${product.deliveryDays} ngày`}</strong>
                       </div>
                     </div>
@@ -261,3 +261,4 @@ function PackageDetailPage() {
 }
 
 export default PackageDetailPage;
+
