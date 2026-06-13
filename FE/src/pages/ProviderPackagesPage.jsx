@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getApiErrorMessage } from '../api/client.js';
 import providerApi from '../api/provider.js';
-import Footer from '../components/Footer.jsx';
-import Header from '../components/Header.jsx';
+import ProviderShell from '../components/ProviderShell.jsx';
 
 function getProductState(product) {
   if (!product.isActive) return 'Tạm dừng';
@@ -25,7 +24,7 @@ function ProviderPackagesPage() {
       if (response.success) setProducts(response.data || []);
       else setError(response.message || 'Không thể tải sản phẩm.');
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Vui lòng đăng nhập tài khoản kho.'));
+      setError(getApiErrorMessage(err, 'Vui lòng đăng nhập tài khoản kho vận.'));
     } finally {
       setLoading(false);
     }
@@ -34,6 +33,12 @@ function ProviderPackagesPage() {
   useEffect(() => {
     load();
   }, []);
+
+  const stats = useMemo(() => ({
+    total: products.length,
+    active: products.filter((product) => product.isActive && product.isApproved).length,
+    low: products.filter((product) => Number(product.stockQuantity || 0) <= 50).length,
+  }), [products]);
 
   const updateStockForm = (productId, field, value) => {
     setStockForms((current) => ({
@@ -81,82 +86,84 @@ function ProviderPackagesPage() {
   };
 
   return (
-    <div className="app-shell ice-theme">
-      <Header />
-      <main>
-        <section className="section dashboard-section">
-          <div className="container">
-            <div className="page-title-row">
-              <div>
-                <span className="eyebrow">Kho vận</span>
-                <h1>Sản phẩm và tồn kho</h1>
-              </div>
-              <div className="inline-actions">
-                <Link className="btn btn--ghost" to="/provider/orders">Đơn cần xuất</Link>
-                <Link className="btn btn--primary" to="/provider/packages/create">Nhập sản phẩm</Link>
-              </div>
-            </div>
+    <ProviderShell
+      title="Tồn kho chi nhánh"
+      subtitle="Quản lý sản phẩm, nhập kho và xuất kho thủ công cho chi nhánh đang đăng nhập."
+      action={<Link className="btn btn--primary" to="/provider/packages/create">Nhập sản phẩm</Link>}
+    >
+      <section className="provider-kpi-grid provider-kpi-grid--small">
+        <article className="provider-mini-stat"><span>Sản phẩm</span><strong>{stats.total}</strong></article>
+        <article className="provider-mini-stat"><span>Đang bán</span><strong>{stats.active}</strong></article>
+        <article className="provider-mini-stat"><span>Sắp hết</span><strong>{stats.low}</strong></article>
+      </section>
 
-            {loading && <div className="loading-state"><span className="spinner" /><p>Đang tải sản phẩm...</p></div>}
-            {error && <div className="error-state"><p>{error}</p></div>}
-            {!loading && products.length === 0 && !error && <div className="empty-state"><p>Chưa có sản phẩm nào.</p></div>}
-
-            {!loading && products.length > 0 && (
-              <div className="work-grid">
-                {products.map((product) => (
-                  <article className="work-panel" key={product.id}>
-                    <span className="eyebrow">{product.category} · {getProductState(product)}</span>
-                    <h2>{product.name}</h2>
-                    <p>{product.shortDescription || product.description}</p>
-                    <p>{Number(product.price).toLocaleString('vi-VN')}đ/{product.unit}</p>
-                    <p><strong>Tồn kho:</strong> {product.stockQuantity} {product.unit}</p>
-                    <strong>{product.sku || 'Chưa có SKU'}</strong>
-                    <div className="admin-form-grid">
-                      <label>
-                        Số lượng
-                        <input
-                          type="number"
-                          min="1"
-                          value={stockForms[product.id]?.quantity || ''}
-                          onChange={(event) => updateStockForm(product.id, 'quantity', event.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Lý do
-                        <input
-                          value={stockForms[product.id]?.reason || ''}
-                          onChange={(event) => updateStockForm(product.id, 'reason', event.target.value)}
-                          placeholder="VD: nhập hàng mới, kiểm kê..."
-                        />
-                      </label>
-                    </div>
-                    <div className="inline-actions">
-                      <button
-                        className="btn btn--primary"
-                        type="button"
-                        disabled={Boolean(adjustingId)}
-                        onClick={() => adjustStock(product, 'StockIn')}
-                      >
-                        {adjustingId === `${product.id}:StockIn` ? 'Đang nhập...' : 'Nhập kho'}
-                      </button>
-                      <button
-                        className="btn btn--ghost"
-                        type="button"
-                        disabled={Boolean(adjustingId)}
-                        onClick={() => adjustStock(product, 'StockOut')}
-                      >
-                        {adjustingId === `${product.id}:StockOut` ? 'Đang xuất...' : 'Xuất kho'}
-                      </button>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
+      <section className="provider-panel">
+        <div className="provider-panel__title">
+          <div>
+            <h2>Sản phẩm và tồn kho</h2>
+            <p>Mỗi kho có tồn riêng. Admin tổng nhìn toàn hệ thống, kho vận chỉ thấy sản phẩm của chi nhánh mình.</p>
           </div>
-        </section>
-      </main>
-      <Footer />
-    </div>
+          <span>{products.length} sản phẩm trong chi nhánh</span>
+        </div>
+
+        {loading && <div className="loading-state"><span className="spinner" /><p>Đang tải sản phẩm...</p></div>}
+        {error && <p className="admin-message admin-message--danger">{error}</p>}
+        {!loading && products.length === 0 && !error && <p className="admin-empty">Chưa có sản phẩm nào.</p>}
+
+        {!loading && products.length > 0 && (
+          <div className="provider-stock-table">
+            <div className="provider-stock-table__head">
+              <span>Sản phẩm</span>
+              <span>SKU</span>
+              <span>Giá</span>
+              <span>Tồn</span>
+              <span>Nhập/xuất</span>
+            </div>
+            {products.map((product) => (
+              <article className="provider-stock-row" key={product.id}>
+                <div>
+                  <strong>{product.name}</strong>
+                  <small>{product.category} · {getProductState(product)}</small>
+                </div>
+                <div><strong>{product.sku || 'Chưa có SKU'}</strong></div>
+                <div><strong>{Number(product.price || 0).toLocaleString('vi-VN')}đ/{product.unit}</strong></div>
+                <div><span className="provider-stock-pill">{product.stockQuantity} {product.unit}</span></div>
+                <div className="provider-stock-actions">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Số lượng"
+                    value={stockForms[product.id]?.quantity || ''}
+                    onChange={(event) => updateStockForm(product.id, 'quantity', event.target.value)}
+                  />
+                  <input
+                    placeholder="Lý do"
+                    value={stockForms[product.id]?.reason || ''}
+                    onChange={(event) => updateStockForm(product.id, 'reason', event.target.value)}
+                  />
+                  <button
+                    className="btn btn--primary"
+                    type="button"
+                    disabled={Boolean(adjustingId)}
+                    onClick={() => adjustStock(product, 'StockIn')}
+                  >
+                    {adjustingId === `${product.id}:StockIn` ? 'Đang nhập...' : 'Nhập'}
+                  </button>
+                  <button
+                    className="btn btn--ghost"
+                    type="button"
+                    disabled={Boolean(adjustingId)}
+                    onClick={() => adjustStock(product, 'StockOut')}
+                  >
+                    {adjustingId === `${product.id}:StockOut` ? 'Đang xuất...' : 'Xuất'}
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </ProviderShell>
   );
 }
 

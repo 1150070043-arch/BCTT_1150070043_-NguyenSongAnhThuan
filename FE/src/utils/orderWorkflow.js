@@ -95,3 +95,7 @@ export function getAllowedAdminStatuses(status) {
   }
   return ORDER_STATUS_OPTIONS;
 }
+
+export function getNextStatuses(status) {
+  return NEXT_STATUS_MAP[normalizeOrderStatus(status)] || [];
+}
