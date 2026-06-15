@@ -147,7 +147,7 @@ function ProviderPackagesPage() {
                     disabled={Boolean(adjustingId)}
                     onClick={() => adjustStock(product, 'StockIn')}
                   >
-                    {adjustingId === `${product.id}:StockIn` ? 'Đang nhập...' : 'Nhập'}
+                    {adjustingId === `${product.id}:StockIn` ? 'Đang gửi...' : 'Yêu cầu nhập'}
                   </button>
                   <button
                     className="btn btn--ghost"

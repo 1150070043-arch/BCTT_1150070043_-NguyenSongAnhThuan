@@ -22,7 +22,7 @@ function AdminProvidersPage() {
   };
 
   return (
-    <AdminShell title="Xác minh kho vận" subtitle="Duyệt tài khoản kho vận trước khi họ quản lý sản phẩm, tồn kho và đơn cần xuất.">
+    <AdminShell title="Xác minh kho vận" subtitle="">
       <section className="admin-panel admin-flow-explain">
         <div className="admin-panel__title">
           <h2>Luồng kho vận</h2>

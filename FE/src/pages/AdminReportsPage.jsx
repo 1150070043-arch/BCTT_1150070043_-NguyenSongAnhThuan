@@ -72,9 +72,12 @@ function AdminReportsPage() {
   const [dateFilters, setDateFilters] = useState({ fromDate: '', toDate: '' });
   const [inventory, setInventory] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [inventoryRequests, setInventoryRequests] = useState([]);
+  const [inventoryReviewForms, setInventoryReviewForms] = useState({});
   const [supportRequests, setSupportRequests] = useState([]);
   const [updatingSupportId, setUpdatingSupportId] = useState(null);
   const [adjustingStock, setAdjustingStock] = useState(false);
+  const [reviewingInventoryRequestId, setReviewingInventoryRequestId] = useState(null);
   const [message, setMessage] = useState('');
   const [adjustment, setAdjustment] = useState({
     productId: '',
@@ -94,16 +97,18 @@ function AdminReportsPage() {
     const reportParams = Object.fromEntries(
       Object.entries(dateFilters).filter(([, value]) => value)
     );
-    const [reportResponse, inventoryResponse, transactionResponse, supportResponse] = await Promise.all([
+    const [reportResponse, inventoryResponse, transactionResponse, inventoryRequestResponse, supportResponse] = await Promise.all([
       adminApi.reports(reportParams),
       adminApi.inventorySummary(),
       adminApi.inventoryTransactions({ take: 40 }),
+      adminApi.inventoryAdjustmentRequests({ status: 'Pending', take: 40 }),
       adminApi.supportRequests({ take: 40 }),
     ]);
 
     if (reportResponse.success) setReport(reportResponse.data);
     if (inventoryResponse.success) setInventory(inventoryResponse.data || []);
     if (transactionResponse.success) setTransactions(transactionResponse.data || []);
+    if (inventoryRequestResponse.success) setInventoryRequests(inventoryRequestResponse.data || []);
     if (supportResponse.success) setSupportRequests(supportResponse.data || []);
   };
 
@@ -169,6 +174,48 @@ function AdminReportsPage() {
     }
   };
 
+  const updateInventoryReviewForm = (id, field, value) => {
+    setInventoryReviewForms((current) => ({
+      ...current,
+      [id]: {
+        adminSignature: '',
+        adminNote: '',
+        ...(current[id] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const reviewInventoryRequest = async (request, action) => {
+    const form = inventoryReviewForms[request.id] || {};
+    if (action === 'approve' && !form.adminSignature?.trim()) {
+      setMessage('Vui lòng nhập chữ ký/tên admin trước khi duyệt phiếu nhập kho.');
+      return;
+    }
+
+    setReviewingInventoryRequestId(request.id);
+    setMessage('');
+    try {
+      const payload = {
+        adminSignature: form.adminSignature?.trim() || '',
+        adminNote: form.adminNote?.trim() || '',
+      };
+      const response = action === 'approve'
+        ? await adminApi.approveInventoryAdjustmentRequest(request.id, payload)
+        : await adminApi.rejectInventoryAdjustmentRequest(request.id, payload);
+      setMessage(response.message || 'Đã xử lý phiếu nhập kho.');
+      setInventoryReviewForms((current) => ({
+        ...current,
+        [request.id]: { adminSignature: '', adminNote: '' },
+      }));
+      await load();
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Không thể xử lý phiếu nhập kho.');
+    } finally {
+      setReviewingInventoryRequestId(null);
+    }
+  };
+
   const updateSupport = async (request, status) => {
     setUpdatingSupportId(request.id);
     setMessage('');
@@ -187,7 +234,7 @@ function AdminReportsPage() {
   };
 
   return (
-    <AdminShell title="Báo cáo vận hành" subtitle="Theo dõi doanh thu, thanh toán, kho và chăm sóc sau bán theo từng nhóm nội dung.">
+    <AdminShell title="Báo cáo vận hành">
       {message && <p className="admin-message">{message}</p>}
 
       <section className="admin-panel">
@@ -349,6 +396,62 @@ function AdminReportsPage() {
                     {supportRequests.length === 0 && <p className="admin-empty">Chưa có yêu cầu hỗ trợ.</p>}
                   </div>
                 </article>
+              </section>
+
+              <section className="admin-panel">
+                <div className="admin-panel__title">
+                  <h2>Phiếu nhập kho chờ admin ký</h2>
+                  <span>{inventoryRequests.length} phiếu chờ duyệt</span>
+                </div>
+                <div className="admin-table">
+                  <div className="admin-table__head admin-table__head--inventory">
+                    <span>Sản phẩm</span><span>Kho yêu cầu</span><span>Số lượng</span><span>Tồn hiện tại</span><span>Lý do</span><span>Ký duyệt</span>
+                  </div>
+                  {inventoryRequests.map((item) => {
+                    const form = inventoryReviewForms[item.id] || {};
+                    return (
+                      <div className="admin-table__row admin-table__row--inventory" key={item.id}>
+                        <div><strong>{item.productName}</strong><small>{item.productSku || `#${item.productId}`}</small></div>
+                        <span>{item.providerName}</span>
+                        <strong>+{item.quantity} {item.unit}</strong>
+                        <span>{item.stockBefore} {item.unit}</span>
+                        <span>{item.reason || 'Không ghi lý do'}</span>
+                        <div className="admin-inventory-review">
+                          <input
+                            value={form.adminSignature || ''}
+                            onChange={(event) => updateInventoryReviewForm(item.id, 'adminSignature', event.target.value)}
+                            placeholder="Chữ ký/tên admin"
+                          />
+                          <textarea
+                            rows="2"
+                            value={form.adminNote || ''}
+                            onChange={(event) => updateInventoryReviewForm(item.id, 'adminNote', event.target.value)}
+                            placeholder="Ghi chú duyệt/từ chối"
+                          />
+                          <div className="inline-actions">
+                            <button
+                              className="admin-mini-action"
+                              type="button"
+                              disabled={reviewingInventoryRequestId === item.id}
+                              onClick={() => reviewInventoryRequest(item, 'approve')}
+                            >
+                              Duyệt nhập
+                            </button>
+                            <button
+                              className="admin-mini-action"
+                              type="button"
+                              disabled={reviewingInventoryRequestId === item.id}
+                              onClick={() => reviewInventoryRequest(item, 'reject')}
+                            >
+                              Từ chối
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {inventoryRequests.length === 0 && <p className="admin-empty">Không có phiếu nhập kho đang chờ duyệt.</p>}
+                </div>
               </section>
 
               <section className="admin-panel">

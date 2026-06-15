@@ -116,7 +116,7 @@ function AdminOrderDetailPage() {
   return (
     <AdminShell
       title={order ? `Đơn hàng #${order.id}` : `Đơn hàng #${id}`}
-      subtitle="Chi tiết đơn hàng, thanh toán, thông tin nhận hàng và lịch sử trạng thái."
+      subtitle=""
       action={<Link className="btn btn--ghost" to="/admin/orders"><ArrowLeft size={17} />Danh sách đơn</Link>}
     >
       {message && <p className="admin-message">{message}</p>}

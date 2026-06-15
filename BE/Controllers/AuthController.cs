@@ -251,10 +251,12 @@ namespace WebsiteServiceEcommerce.API.Controllers
                 });
             }
 
+            var normalizedEmail = dto.Email.Trim().ToLowerInvariant();
+
             // Find user by email
             var user = await _context.Users
                 .Include(u => u.Provider)
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
 
             if (user == null)
             {

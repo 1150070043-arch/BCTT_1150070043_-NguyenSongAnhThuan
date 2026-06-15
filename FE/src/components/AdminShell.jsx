@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   LogOut,
   PackageCheck,
+  PackagePlus,
   ReceiptText,
   RefreshCw,
   ShieldCheck,
@@ -28,6 +29,7 @@ const reportChildren = [
 const navItems = [
   { to: '/admin', label: 'Tổng quan', icon: LayoutDashboard },
   { to: '/admin/packages', label: 'Sản phẩm', icon: Boxes, badgeKey: 'packages' },
+  { to: '/admin/inventory', label: 'Nhập kho', icon: PackagePlus, badgeKey: 'inventory' },
   { to: '/admin/orders', label: 'Đơn hàng', icon: ReceiptText, badgeKey: 'orders' },
   { to: '/admin/users', label: 'Người dùng', icon: Users },
   { to: '/admin/providers', label: 'Kho vận', icon: Truck, badgeKey: 'providers' },
@@ -70,6 +72,7 @@ function AdminShell({ title, subtitle, action, children }) {
 
   const badges = useMemo(() => ({
     packages: (dashboard?.pendingPackages || 0) + (dashboard?.lowStockProducts || 0),
+    inventory: dashboard?.pendingInventoryRequests || 0,
     orders: (dashboard?.awaitingBankTransfers || 0) + (dashboard?.codUncollected || 0),
     providers: dashboard?.pendingProviders,
     reports: dashboard?.openSupportRequests,

@@ -1,6 +1,5 @@
 import {
   Boxes,
-  ClipboardList,
   LayoutDashboard,
   LogOut,
   PackagePlus,
@@ -88,11 +87,6 @@ function ProviderShell({ title, subtitle, action, children }) {
           </div>
         </header>
         <main className="admin-content provider-content">
-          <section className="provider-branch-strip">
-            <ClipboardList size={18} />
-            <span>Dữ liệu hiển thị theo chi nhánh đang đăng nhập.</span>
-            <strong>{auth?.fullName || auth?.email}</strong>
-          </section>
           {children}
         </main>
       </div>

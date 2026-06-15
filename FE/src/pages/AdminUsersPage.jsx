@@ -99,7 +99,7 @@ function AdminUsersPage() {
   };
 
   return (
-    <AdminShell title="Quản lý người dùng" subtitle="Khách hàng tự đăng ký; tài khoản nội bộ do admin cấp và có thể đặt lại mật khẩu mặc định.">
+    <AdminShell title="Quản lý người dùng">
       <section className="admin-panel">
         <div className="admin-panel__title">
           <div>

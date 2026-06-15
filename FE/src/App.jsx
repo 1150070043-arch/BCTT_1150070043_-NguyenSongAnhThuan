@@ -25,6 +25,7 @@ import AdminOrdersPage from './pages/AdminOrdersPage.jsx';
 import AdminOrderDetailPage from './pages/AdminOrderDetailPage.jsx';
 import AdminReportsPage from './pages/AdminReportsPage.jsx';
 import AdminAuditLogsPage from './pages/AdminAuditLogsPage.jsx';
+import AdminInventoryPage from './pages/AdminInventoryPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import ProtectedRoute, { GuestRoute } from './routes/ProtectedRoute.jsx';
 import { getAuth, getDashboardPath } from './utils/authStorage.js';
@@ -76,6 +77,7 @@ function AnimatedRoutes() {
           <Route path="/admin/orders/:id" element={<ProtectedRoute roles={['Admin']}><AdminOrderDetailPage /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute roles={['Admin']}><AdminReportsPage /></ProtectedRoute>} />
           <Route path="/admin/audit-logs" element={<ProtectedRoute roles={['Admin']}><AdminAuditLogsPage /></ProtectedRoute>} />
+          <Route path="/admin/inventory" element={<ProtectedRoute roles={['Admin']}><AdminInventoryPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>

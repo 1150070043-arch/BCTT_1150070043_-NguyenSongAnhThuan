@@ -45,13 +45,12 @@ const categoryLabels = {
   ComboSi: 'Combo sỉ',
 };
 const categoryOptions = categories.map((category) => ({ value: category, label: categoryLabels[category] || category }));
-const statuses = [
-  { value: 'All', label: 'Tất cả' },
-  { value: 'Published', label: 'Đang bán' },
-  { value: 'Pending', label: 'Chờ duyệt' },
-  { value: 'Hidden', label: 'Đã ẩn' },
-  { value: 'Featured', label: 'Nổi bật' },
-  { value: 'LowStock', label: 'Sắp hết' },
+
+const tabs = [
+  { value: 'selling', label: 'Đang bán', statusFilter: 'Published' },
+  { value: 'pending', label: 'Chờ duyệt', statusFilter: 'Pending' },
+  { value: 'hidden', label: 'Đã ẩn', statusFilter: 'Hidden' },
+  { value: 'all', label: 'Tất cả', statusFilter: 'All' },
 ];
 
 function getPrimaryImage(product) {
@@ -98,7 +97,8 @@ function AdminPackagesPage() {
   const [providers, setProviders] = useState([]);
   const [selected, setSelected] = useState(null);
   const [form, setForm] = useState(emptyProduct);
-  const [filters, setFilters] = useState({ status: 'All', category: 'All', search: '' });
+  const [activeTab, setActiveTab] = useState('selling');
+  const [filters, setFilters] = useState({ category: 'All', search: '' });
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -116,11 +116,13 @@ function AdminPackagesPage() {
     setForm(toForm(product));
   };
 
+  const currentTab = tabs.find((t) => t.value === activeTab);
+
   const load = async () => {
     setLoading(true);
     try {
       const params = {
-        status: filters.status === 'All' ? undefined : filters.status,
+        status: currentTab.statusFilter === 'All' ? undefined : currentTab.statusFilter,
         category: filters.category === 'All' ? undefined : filters.category,
         search: filters.search || undefined,
       };
@@ -148,7 +150,7 @@ function AdminPackagesPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.status, filters.category]);
+  }, [activeTab, filters.category]);
 
   useEffect(() => {
     let mounted = true;
@@ -205,9 +207,7 @@ function AdminPackagesPage() {
 
   const saveProduct = async () => {
     if (!selected) return;
-
     const payload = toPayload(form);
-
     await applyServerProduct(await adminApi.updatePackage(selected.id, payload), 'Đã lưu sản phẩm.');
   };
 
@@ -245,7 +245,6 @@ function AdminPackagesPage() {
 
   const uploadImages = async (event) => {
     if (!selected) return;
-
     const files = Array.from(event.target.files || []);
     event.target.value = '';
     if (files.length === 0) return;
@@ -303,8 +302,7 @@ function AdminPackagesPage() {
 
   return (
     <AdminShell
-      title="Quản lý sản phẩm"
-      subtitle="Chỉnh thông tin sản phẩm, upload thư viện ảnh tối đa 7 hình và chọn ảnh chính hiển thị ngoài cửa hàng."
+      title={activeTab === 'selling' ? 'Sản phẩm đang bán' : activeTab === 'pending' ? 'Sản phẩm chờ duyệt' : activeTab === 'hidden' ? 'Sản phẩm đã ẩn' : 'Tất cả sản phẩm'}
       action={(
         <div className="inline-actions">
           <button className="btn btn--secondary" type="button" onClick={() => setIsCreateOpen(true)}>
@@ -407,23 +405,23 @@ function AdminPackagesPage() {
         </div>
       )}
 
-      <section className="admin-stats-grid admin-stats-grid--compact">
-        <article className="admin-stat-card">
-          <span>Tổng sản phẩm</span>
-          <strong>{stats.total}</strong>
-        </article>
-        <article className="admin-stat-card">
-          <span>Đang bán</span>
-          <strong>{stats.active}</strong>
-        </article>
-        <article className="admin-stat-card">
-          <span>Chờ duyệt</span>
-          <strong>{stats.pending}</strong>
-        </article>
-        <article className="admin-stat-card">
-          <span>Sắp hết</span>
-          <strong>{stats.lowStock}</strong>
-        </article>
+      <section className="admin-tabs-bar">
+        {tabs.map((tab) => (
+          <button
+            key={tab.value}
+            className={`admin-tab ${activeTab === tab.value ? 'is-active' : ''}`}
+            type="button"
+            onClick={() => { setActiveTab(tab.value); setSelected(null); setMessage(''); }}
+          >
+            {tab.label}
+            {tab.value === 'pending' && stats.pending > 0 && (
+              <span className="admin-tab-badge">{stats.pending}</span>
+            )}
+            {tab.value === 'selling' && stats.active > 0 && (
+              <span className="admin-tab-badge admin-tab-badge--green">{stats.active}</span>
+            )}
+          </button>
+        ))}
       </section>
 
       <section className="admin-panel">
@@ -437,7 +435,6 @@ function AdminPackagesPage() {
               placeholder="Tìm theo tên, SKU, mô tả"
             />
           </label>
-          <AdminSelect value={filters.status} options={statuses} onChange={(value) => setFilters((current) => ({ ...current, status: value }))} />
           <AdminSelect value={filters.category} options={categoryOptions} onChange={(value) => setFilters((current) => ({ ...current, category: value }))} />
           <button className="btn btn--secondary" type="button" onClick={load}>Lọc</button>
         </div>
@@ -464,6 +461,9 @@ function AdminPackagesPage() {
                   <span className="admin-product-row__body">
                     <strong>{product.name}</strong>
                     <small>{product.sku} · {categoryLabels[product.category] || product.category} · {Number(product.price).toLocaleString('vi-VN')}đ/{product.unit}</small>
+                    {activeTab === 'pending' && (
+                      <small className="admin-meta">Kho: {product.providerName || `#${product.providerId}`}</small>
+                    )}
                   </span>
                   <span className={`admin-badge admin-badge--${status.className}`}>{status.label}</span>
                 </button>
@@ -473,7 +473,7 @@ function AdminPackagesPage() {
 
           <aside className="admin-editor">
             {!selected ? (
-              <div className="admin-empty admin-empty--editor">Chọn một sản phẩm để chỉnh sửa.</div>
+              <div className="admin-empty admin-empty--editor" />
             ) : (
               <>
                 <div className="admin-editor__preview">
@@ -591,10 +591,12 @@ function AdminPackagesPage() {
                     <Save size={17} />
                     Lưu thay đổi
                   </button>
-                  <button className="btn btn--secondary" type="button" onClick={() => approve(selected)}>
-                    <CheckCircle2 size={17} />
-                    Duyệt
-                  </button>
+                  {!productStatus(selected).className.includes('success') && (
+                    <button className="btn btn--secondary" type="button" onClick={() => approve(selected)}>
+                      <CheckCircle2 size={17} />
+                      Duyệt
+                    </button>
+                  )}
                   <button className="btn btn--ghost" type="button" onClick={() => reject(selected)}>
                     <XCircle size={17} />
                     Từ chối

@@ -150,7 +150,7 @@ function AdminOrdersPage() {
   }), [orders]);
 
   return (
-    <AdminShell title="Quản lý đơn hàng" subtitle="Theo dõi đơn, lọc nhanh theo trạng thái, thanh toán và ngày tạo.">
+    <AdminShell title="Quản lý đơn hàng" subtitle="">
       <section className="admin-stats-grid admin-order-summary">
         <article className="admin-stat-card"><span>Tổng đơn</span><strong>{summary.total}</strong></article>
         <article className="admin-stat-card"><span>Chờ xác nhận</span><strong>{summary.pending}</strong></article>

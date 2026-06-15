@@ -54,6 +54,18 @@ const adminApi = {
   inventoryTransactions: async (params = {}) => (
     await apiClient.get('/admin/inventory/transactions', { params, headers: authHeader() })
   ).data,
+  inventoryAdjustmentRequests: async (params = {}) => (
+    await apiClient.get('/admin/inventory/adjustment-requests', { params, headers: authHeader() })
+  ).data,
+  approveInventoryAdjustmentRequest: async (id, payload) => (
+    await apiClient.put(`/admin/inventory/adjustment-requests/${id}/approve`, payload, { headers: authHeader() })
+  ).data,
+  approveAdjustmentRequest: async (payload) => (
+    await apiClient.put('/admin/inventory/adjustment-requests/approve', payload, { headers: authHeader() })
+  ).data,
+  rejectInventoryAdjustmentRequest: async (id, payload) => (
+    await apiClient.put(`/admin/inventory/adjustment-requests/${id}/reject`, payload, { headers: authHeader() })
+  ).data,
   createInventoryAdjustment: async (payload) => (
     await apiClient.post('/admin/inventory/adjustments', payload, { headers: authHeader() })
   ).data,

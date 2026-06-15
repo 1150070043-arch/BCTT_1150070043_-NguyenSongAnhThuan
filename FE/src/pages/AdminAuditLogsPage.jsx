@@ -102,7 +102,7 @@ function AdminAuditLogsPage() {
   };
 
   return (
-    <AdminShell title="Nhật ký thao tác" subtitle="Theo dõi các thao tác quan trọng của admin và xem chi tiết từng bản ghi.">
+    <AdminShell title="Nhật ký thao tác">
       <section className="admin-panel">
         <div className="admin-toolbar">
           <label className="admin-search">
@@ -149,7 +149,7 @@ function AdminAuditLogsPage() {
             <Eye size={20} />
           </div>
           {!selected ? (
-            <p className="admin-empty">Chọn một nhật ký để xem chi tiết.</p>
+            <p className="admin-empty" />
           ) : (
             <>
               <div className="admin-info-list">

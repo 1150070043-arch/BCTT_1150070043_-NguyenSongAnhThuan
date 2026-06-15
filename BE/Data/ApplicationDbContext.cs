@@ -18,6 +18,7 @@ namespace WebsiteServiceEcommerce.API.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
         public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+        public DbSet<InventoryAdjustmentRequest> InventoryAdjustmentRequests { get; set; }
         public DbSet<OrderItem> OrderItems { get; set; }
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Review> Reviews { get; set; }
@@ -203,6 +204,33 @@ namespace WebsiteServiceEcommerce.API.Data
                 entity.Property(e => e.TransactionType).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Reason).HasMaxLength(500);
                 entity.Property(e => e.CreatedByRole).HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<InventoryAdjustmentRequest>(entity =>
+            {
+                entity.ToTable("InventoryAdjustmentRequests");
+                entity.HasKey(e => e.Id);
+                entity.HasOne(e => e.Product)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Provider)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProviderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.RequestedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.RequestedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.ReviewedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ReviewedByUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                entity.Property(e => e.MovementType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Reason).HasMaxLength(500);
+                entity.Property(e => e.AdminSignature).HasMaxLength(255);
+                entity.Property(e => e.AdminNote).HasMaxLength(500);
             });
 
             // Payment configuration

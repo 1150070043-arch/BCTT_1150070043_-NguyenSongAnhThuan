@@ -6,6 +6,7 @@ using WebsiteServiceEcommerce.API.Data;
 using WebsiteServiceEcommerce.API.DTOs;
 using WebsiteServiceEcommerce.API.Helpers;
 using WebsiteServiceEcommerce.API.Models;
+using WebsiteServiceEcommerce.API.Services;
 
 namespace WebsiteServiceEcommerce.API.Controllers
 {
@@ -15,10 +16,12 @@ namespace WebsiteServiceEcommerce.API.Controllers
     public class ProviderWorkController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IInventoryService _inventoryService;
 
-        public ProviderWorkController(ApplicationDbContext context)
+        public ProviderWorkController(ApplicationDbContext context, IInventoryService inventoryService)
         {
             _context = context;
+            _inventoryService = inventoryService;
         }
 
         [HttpGet("packages")]
@@ -194,6 +197,34 @@ namespace WebsiteServiceEcommerce.API.Controllers
             });
         }
 
+        [HttpPost("adjustment-request")]
+        public async Task<ActionResult<ApiResponse<object>>> CreateAdjustmentRequest(CreateAdjustmentRequestDTO dto)
+        {
+            var providerId = GetProviderId();
+            if (providerId == null)
+            {
+                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Không tìm thấy thông tin kho." });
+            }
+
+            var userId = GetUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Không tìm thấy tài khoản." });
+            }
+
+            var success = await _inventoryService.CreateAdjustmentRequestAsync(dto, providerId.Value, userId.Value);
+            if (!success)
+            {
+                return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy sản phẩm thuộc kho của bạn." });
+            }
+
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "Yêu cầu nhập thêm hàng đã được tạo, chờ admin duyệt."
+            });
+        }
+
         [HttpPut("packages/{id}/stock")]
         public async Task<ActionResult<ApiResponse<PackageDto>>> AdjustPackageStock(int id, InventoryAdjustmentDto dto)
         {
@@ -223,7 +254,54 @@ namespace WebsiteServiceEcommerce.API.Controllers
             }
 
             var movementType = dto.MovementType == "StockOut" ? "StockOut" : "StockIn";
-            var quantityChange = movementType == "StockIn" ? dto.Quantity : -dto.Quantity;
+
+            if (movementType == "StockIn")
+            {
+                var requestedByUserId = GetUserId();
+                if (requestedByUserId == null)
+                {
+                    return Unauthorized(new ApiResponse<PackageDto> { Success = false, Message = "Không tìm thấy tài khoản kho đang đăng nhập." });
+                }
+
+                var stockInReason = string.IsNullOrWhiteSpace(dto.Reason)
+                    ? "Kho gửi yêu cầu nhập thêm hàng."
+                    : dto.Reason.Trim();
+
+                var request = new InventoryAdjustmentRequest
+                {
+                    ProductId = package.Id,
+                    ProviderId = providerId.Value,
+                    RequestedByUserId = requestedByUserId.Value,
+                    MovementType = "StockIn",
+                    Quantity = dto.Quantity,
+                    StockBefore = package.StockQuantity,
+                    Reason = stockInReason,
+                    Status = "Pending",
+                    RequestedAt = DateTime.UtcNow
+                };
+
+                _context.InventoryAdjustmentRequests.Add(request);
+                AddInventoryTransaction(
+                    package.Id,
+                    null,
+                    0,
+                    package.StockQuantity,
+                    "StockInRequested",
+                    $"Kho yêu cầu nhập {dto.Quantity} {package.Unit}. Chờ admin duyệt.",
+                    GetUserId(),
+                    "Provider");
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new ApiResponse<PackageDto>
+                {
+                    Success = true,
+                    Message = "Đã gửi yêu cầu nhập kho. Tồn kho chỉ được cộng sau khi admin tổng ký duyệt.",
+                    Data = ToPackageDto(package)
+                });
+            }
+
+            var quantityChange = -dto.Quantity;
 
             if (package.StockQuantity + quantityChange < 0)
             {

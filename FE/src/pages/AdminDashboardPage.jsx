@@ -32,7 +32,6 @@ function AdminDashboardPage() {
   return (
     <AdminShell
       title="Bảng điều khiển quản trị"
-      subtitle="Theo dõi nhanh sản phẩm, tồn kho, đơn hàng, người dùng và báo cáo vận hành."
       action={<Link className="btn btn--primary" to="/admin/packages">Quản lý sản phẩm</Link>}
     >
       <section className="admin-hero-panel">

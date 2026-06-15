@@ -18,6 +18,7 @@ builder.Services.AddControllers();
 builder.Services.AddMemoryCache();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 var vnpaySettings = builder.Configuration.GetSection("VNPAY");
 builder.Services.AddVnpayClient(config =>

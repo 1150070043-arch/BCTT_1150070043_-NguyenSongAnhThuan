@@ -8,21 +8,24 @@ using WebsiteServiceEcommerce.API.Data;
 using WebsiteServiceEcommerce.API.DTOs;
 using WebsiteServiceEcommerce.API.Helpers;
 using WebsiteServiceEcommerce.API.Models;
+using WebsiteServiceEcommerce.API.Services;
 
 namespace WebsiteServiceEcommerce.API.Controllers
 {
     [Route("api/admin")]
     [ApiController]
     [Authorize(Roles = "Admin")]
-public class AdminController : ControllerBase
+    public class AdminController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private readonly IInventoryService _inventoryService;
 
-        public AdminController(ApplicationDbContext context, IWebHostEnvironment environment)
+        public AdminController(ApplicationDbContext context, IWebHostEnvironment environment, IInventoryService inventoryService)
         {
             _context = context;
             _environment = environment;
+            _inventoryService = inventoryService;
         }
 
         [HttpGet("dashboard")]
@@ -51,6 +54,7 @@ public class AdminController : ControllerBase
                     Revenue = paidRevenue,
                     PendingProviders = await _context.Providers.CountAsync(p => !p.IsVerified),
                     PendingPackages = await _context.Packages.CountAsync(p => !p.IsApproved),
+                    PendingInventoryRequests = await _context.InventoryAdjustmentRequests.CountAsync(r => r.Status == "Pending"),
                     LowStockProducts = lowStock,
                     CodUncollected = codUncollected,
                     AwaitingBankTransfers = awaitingBankTransfers,
@@ -1137,6 +1141,198 @@ public class AdminController : ControllerBase
                     MovementType = movementType
                 }
             });
+        }
+
+        [HttpGet("inventory/adjustment-requests")]
+        public async Task<ActionResult<ApiResponse<List<object>>>> GetInventoryAdjustmentRequests(
+            [FromQuery] string? status = "Pending",
+            [FromQuery] string? search = null,
+            [FromQuery] int take = 80)
+        {
+            var query = _context.InventoryAdjustmentRequests
+                .Include(r => r.Product)
+                .Include(r => r.Provider)
+                .Include(r => r.RequestedByUser)
+                .Include(r => r.ReviewedByUser)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(status) && status != "All")
+            {
+                query = query.Where(r => r.Status == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(r =>
+                    r.Id.ToString().Contains(search) ||
+                    r.Product.Name.Contains(search) ||
+                    r.Product.Sku.Contains(search) ||
+                    r.Provider.CompanyName.Contains(search));
+            }
+
+            var safeTake = Math.Clamp(take, 1, 200);
+            var requests = await query
+                .OrderByDescending(r => r.RequestedAt)
+                .Take(safeTake)
+                .Select(r => new
+                {
+                    r.Id,
+                    r.ProductId,
+                    ProductName = r.Product.Name,
+                    ProductSku = r.Product.Sku,
+                    Unit = r.Product.Unit,
+                    r.ProviderId,
+                    ProviderName = r.Provider.CompanyName,
+                    RequestedByName = r.RequestedByUser.FullName,
+                    r.MovementType,
+                    r.Quantity,
+                    r.StockBefore,
+                    r.StockAfter,
+                    r.Reason,
+                    r.Status,
+                    r.AdminSignature,
+                    r.AdminNote,
+                    ReviewedByName = r.ReviewedByUser == null ? "" : r.ReviewedByUser.FullName,
+                    r.RequestedAt,
+                    r.ReviewedAt
+                })
+                .Cast<object>()
+                .ToListAsync();
+
+            return Ok(new ApiResponse<List<object>>
+            {
+                Success = true,
+                Message = "Lấy danh sách phiếu nhập kho thành công.",
+                Data = requests
+            });
+        }
+
+        [HttpPut("inventory/adjustment-requests/approve")]
+        public async Task<ActionResult<ApiResponse<object>>> ApproveAdjustmentRequest(ApproveAdjustmentRequestDTO dto)
+        {
+            var userId = GetUserId();
+            if (userId == null)
+            {
+                return Unauthorized(new ApiResponse<object> { Success = false, Message = "Không tìm thấy thông tin tài khoản." });
+            }
+
+            var result = await _inventoryService.ApproveAdjustmentRequestAsync(dto, userId.Value);
+
+            switch (result)
+            {
+                case "NotFound":
+                    return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy yêu cầu nhập hàng." });
+                case "AlreadyProcessed":
+                    return BadRequest(new ApiResponse<object> { Success = false, Message = "Yêu cầu này đã được xử lý trước đó." });
+                case "ProductNotFound":
+                    return NotFound(new ApiResponse<object> { Success = false, Message = "Sản phẩm liên kết với yêu cầu không tồn tại." });
+                case "ApprovedAndPublished":
+                    return Ok(new ApiResponse<object> { Success = true, Message = "Đã duyệt nhập kho và tự động mở bán sản phẩm." });
+                default:
+                    return Ok(new ApiResponse<object> { Success = true, Message = "Đã duyệt yêu cầu nhập thêm hàng." });
+            }
+        }
+
+        [HttpPut("inventory/adjustment-requests/{id}/approve")]
+        public async Task<ActionResult<ApiResponse<object>>> ApproveInventoryAdjustmentRequest(int id, ReviewInventoryAdjustmentRequestDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.AdminSignature))
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Vui lòng nhập chữ ký/tên admin duyệt phiếu." });
+            }
+
+            var request = await _context.InventoryAdjustmentRequests
+                .Include(r => r.Product)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+            {
+                return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy phiếu nhập kho." });
+            }
+
+            if (request.Status != "Pending")
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Phiếu này đã được xử lý trước đó." });
+            }
+
+            request.Product.StockQuantity += request.Quantity;
+            request.Product.UpdatedAt = DateTime.UtcNow;
+            request.Status = "Approved";
+            request.StockAfter = request.Product.StockQuantity;
+            request.AdminSignature = dto.AdminSignature.Trim();
+            request.AdminNote = dto.AdminNote?.Trim() ?? string.Empty;
+            request.ReviewedByUserId = GetUserId();
+            request.ReviewedAt = DateTime.UtcNow;
+
+            AddInventoryTransaction(
+                request.ProductId,
+                null,
+                request.Quantity,
+                request.Product.StockQuantity,
+                "StockInApproved",
+                $"Admin {request.AdminSignature} duyệt nhập kho. {request.Reason}",
+                GetUserId(),
+                "Admin");
+
+            AddAuditLog("ApproveInventoryRequest", "InventoryAdjustmentRequest", request.Id, $"Duyệt nhập kho #{request.Id}.", new
+            {
+                request.ProductId,
+                request.Quantity,
+                request.StockBefore,
+                request.StockAfter,
+                request.AdminSignature
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new ApiResponse<object> { Success = true, Message = "Đã ký duyệt phiếu nhập kho và cộng tồn." });
+        }
+
+        [HttpPut("inventory/adjustment-requests/{id}/reject")]
+        public async Task<ActionResult<ApiResponse<object>>> RejectInventoryAdjustmentRequest(int id, ReviewInventoryAdjustmentRequestDto dto)
+        {
+            var request = await _context.InventoryAdjustmentRequests
+                .Include(r => r.Product)
+                .FirstOrDefaultAsync(r => r.Id == id);
+
+            if (request == null)
+            {
+                return NotFound(new ApiResponse<object> { Success = false, Message = "Không tìm thấy phiếu nhập kho." });
+            }
+
+            if (request.Status != "Pending")
+            {
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Phiếu này đã được xử lý trước đó." });
+            }
+
+            request.Status = "Rejected";
+            request.AdminSignature = string.IsNullOrWhiteSpace(dto.AdminSignature) ? GetAdminName() : dto.AdminSignature.Trim();
+            request.AdminNote = string.IsNullOrWhiteSpace(dto.AdminNote) ? "Admin từ chối phiếu nhập kho." : dto.AdminNote.Trim();
+            request.StockAfter = request.StockBefore;
+            request.ReviewedByUserId = GetUserId();
+            request.ReviewedAt = DateTime.UtcNow;
+
+            AddInventoryTransaction(
+                request.ProductId,
+                null,
+                0,
+                request.StockBefore,
+                "StockInRejected",
+                $"Admin từ chối nhập {request.Quantity} {request.Product.Unit}. {request.AdminNote}",
+                GetUserId(),
+                "Admin");
+
+            AddAuditLog("RejectInventoryRequest", "InventoryAdjustmentRequest", request.Id, $"Từ chối nhập kho #{request.Id}.", new
+            {
+                request.ProductId,
+                request.Quantity,
+                request.AdminSignature,
+                request.AdminNote
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new ApiResponse<object> { Success = true, Message = "Đã từ chối phiếu nhập kho. Tồn kho không thay đổi." });
         }
 
         [HttpGet("support-requests")]
