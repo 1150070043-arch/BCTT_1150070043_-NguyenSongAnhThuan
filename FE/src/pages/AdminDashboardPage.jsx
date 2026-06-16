@@ -67,7 +67,6 @@ function AdminDashboardPage() {
           </div>
           <div className="admin-task-list">
             <Link to="/admin/packages"><strong>{data?.pendingPackages ?? 0}</strong><span>Sản phẩm đang chờ duyệt</span></Link>
-            <Link to="/admin/providers"><strong>{data?.pendingProviders ?? 0}</strong><span>Kho vận chờ xác minh</span></Link>
             <Link to="/admin/packages"><strong>{data?.lowStockProducts ?? 0}</strong><span>Sản phẩm tồn kho thấp</span></Link>
             <Link to="/admin/reports"><strong>{data?.codUncollected ?? 0}</strong><span>Đơn COD chưa thu</span></Link>
             <Link to="/admin/reports"><strong>{data?.openSupportRequests ?? 0}</strong><span>Yêu cầu hỗ trợ đang mở</span></Link>

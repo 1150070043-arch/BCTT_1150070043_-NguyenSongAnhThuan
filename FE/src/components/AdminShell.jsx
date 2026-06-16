@@ -12,7 +12,6 @@ import {
   RefreshCw,
   ShieldCheck,
   Snowflake,
-  Truck,
   Users,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -32,7 +31,6 @@ const navItems = [
   { to: '/admin/inventory', label: 'Nhập kho', icon: PackagePlus, badgeKey: 'inventory' },
   { to: '/admin/orders', label: 'Đơn hàng', icon: ReceiptText, badgeKey: 'orders' },
   { to: '/admin/users', label: 'Người dùng', icon: Users },
-  { to: '/admin/providers', label: 'Kho vận', icon: Truck, badgeKey: 'providers' },
   { to: '/admin/reports?tab=revenue', label: 'Báo cáo', icon: BarChart3, badgeKey: 'reports', children: reportChildren },
   { to: '/admin/audit-logs', label: 'Nhật ký', icon: ClipboardList },
 ];
@@ -74,7 +72,6 @@ function AdminShell({ title, subtitle, action, children }) {
     packages: dashboard?.lowStockProducts || 0,
     inventory: (dashboard?.pendingInventoryRequests || 0) + (dashboard?.pendingPackages || 0),
     orders: (dashboard?.awaitingBankTransfers || 0) + (dashboard?.codUncollected || 0),
-    providers: dashboard?.pendingProviders,
     reports: dashboard?.openSupportRequests,
   }), [dashboard]);
 
