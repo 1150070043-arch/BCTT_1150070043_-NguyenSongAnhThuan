@@ -19,6 +19,7 @@ const statusMeta = {
 
 function AdminInventoryPage() {
   const [requests, setRequests] = useState([]);
+  const [pendingProducts, setPendingProducts] = useState([]);
   const [filter, setFilter] = useState('Pending');
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
@@ -34,9 +35,15 @@ function AdminInventoryPage() {
         status: filter === 'All' ? undefined : filter,
         search: search || undefined,
       };
-      const response = await adminApi.inventoryAdjustmentRequests(params);
+      const [response, productResponse] = await Promise.all([
+        adminApi.inventoryAdjustmentRequests(params),
+        adminApi.pendingPackages(),
+      ]);
       if (response.success) {
         setRequests(response.data || []);
+        if (productResponse.success) {
+          setPendingProducts(productResponse.data || []);
+        }
       } else {
         setMessage(response.message || 'Không thể tải phiếu nhập kho.');
       }
@@ -92,6 +99,26 @@ function AdminInventoryPage() {
     }
   };
 
+  const approveProduct = async (product) => {
+    try {
+      const response = await adminApi.approvePackage(product.id);
+      setMessage(response.message || 'Đã duyệt sản phẩm nhập mới.');
+      if (response.success) await load();
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Không thể duyệt sản phẩm.');
+    }
+  };
+
+  const rejectProduct = async (product) => {
+    try {
+      const response = await adminApi.rejectPackage(product.id);
+      setMessage(response.message || 'Đã từ chối sản phẩm nhập mới.');
+      if (response.success) await load();
+    } catch (error) {
+      setMessage(error.response?.data?.message || 'Không thể từ chối sản phẩm.');
+    }
+  };
+
   const statusBadge = (status) => ({
     Pending:   { label: 'Chờ duyệt', cls: 'badge--warning' },
     Approved:  { label: 'Đã duyệt',  cls: 'badge--success' },
@@ -104,12 +131,21 @@ function AdminInventoryPage() {
 
   const total = requests.length;
   const activeTab = statusMeta[filter];
+  const keyword = search.trim().toLowerCase();
+  const visiblePendingProducts = keyword
+    ? pendingProducts.filter((product) => [
+        product.name,
+        product.sku,
+        product.providerName,
+      ].some((value) => String(value || '').toLowerCase().includes(keyword)))
+    : pendingProducts;
 
   return (
     <AdminShell title="Nhập kho">
       <div className="ad-inv">
         <div className="ad-inv-stats">
           {[
+            { label: 'SP chờ duyệt', value: pendingProducts.length, icon: PackagePlus, color: '#7c3aed', bg: '#ede9fe' },
             { label: 'Tổng phiếu', value: total,            icon: PackagePlus, color: '#0e8bb2', bg: '#e0f2fe' },
             { label: 'Chờ duyệt',  value: pending.length,   icon: Clock,       color: '#a15c05', bg: '#fff3d6' },
             { label: 'Đã duyệt',   value: approved.length,  icon: CheckCircle2,color: '#047857', bg: '#dff8ec' },
@@ -123,6 +159,43 @@ function AdminInventoryPage() {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="ad-inv-panel">
+          <div className="ad-inv-detail__head">
+            <h3>Sản phẩm nhập mới chờ duyệt</h3>
+            <span className="badge badge--warning">{pendingProducts.length} sản phẩm</span>
+          </div>
+
+          <div className="ad-inv-list ad-inv-list--products">
+            {loading && <p className="ad-inv-empty">Đang tải sản phẩm chờ duyệt...</p>}
+            {!loading && visiblePendingProducts.length === 0 && (
+              <p className="ad-inv-empty">Không có sản phẩm nhập mới đang chờ duyệt.</p>
+            )}
+            {visiblePendingProducts.map((product) => (
+              <article className="ad-inv-row ad-inv-row--product" key={product.id}>
+                <div className="ad-inv-row__top">
+                  <strong>{product.name}</strong>
+                  <span className="badge badge--warning">Chờ duyệt</span>
+                </div>
+                <div className="ad-inv-row__mid">
+                  {product.sku || `#${product.id}`} - {Number(product.price || 0).toLocaleString('vi-VN')}đ/{product.unit || 'đơn vị'}
+                </div>
+                <div className="ad-inv-row__bot">
+                  <span>{product.stockQuantity || 0} {product.unit || ''}</span>
+                  <span>{product.providerName || `#${product.providerId}`}</span>
+                </div>
+                <div className="ad-inv-product-actions">
+                  <button className="btn btn--primary" type="button" onClick={() => approveProduct(product)}>
+                    <CheckCircle2 size={17} /> Duyệt sản phẩm
+                  </button>
+                  <button className="btn btn--ghost btn--ghost-red" type="button" onClick={() => rejectProduct(product)}>
+                    <XCircle size={17} /> Từ chối
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
 
         <div className="ad-inv-panel">

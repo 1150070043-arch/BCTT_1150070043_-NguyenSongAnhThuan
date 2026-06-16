@@ -1,5 +1,4 @@
 import {
-  CheckCircle2,
   EyeOff,
   ImagePlus,
   Plus,
@@ -48,7 +47,6 @@ const categoryOptions = categories.map((category) => ({ value: category, label: 
 
 const tabs = [
   { value: 'selling', label: 'Đang bán', statusFilter: 'Published' },
-  { value: 'pending', label: 'Chờ duyệt', statusFilter: 'Pending' },
   { value: 'hidden', label: 'Đã ẩn', statusFilter: 'Hidden' },
   { value: 'all', label: 'Tất cả', statusFilter: 'All' },
 ];
@@ -128,7 +126,7 @@ function AdminPackagesPage() {
       };
       const response = await adminApi.packages(params);
       if (response.success) {
-        const nextProducts = response.data || [];
+        const nextProducts = (response.data || []).filter((product) => product.isApproved);
         setProducts(nextProducts);
 
         if (selected) {
@@ -175,7 +173,6 @@ function AdminPackagesPage() {
   const stats = useMemo(() => ({
     total: products.length,
     active: products.filter((item) => item.isActive && item.isApproved).length,
-    pending: products.filter((item) => !item.isApproved).length,
     lowStock: products.filter((item) => item.stockQuantity <= 50).length,
   }), [products]);
 
@@ -277,18 +274,6 @@ function AdminPackagesPage() {
   const deleteImage = async (image) => {
     if (!selected) return;
     await applyServerProduct(await adminApi.deleteProductImage(selected.id, image.id), 'Đã xóa ảnh sản phẩm.');
-  };
-
-  const approve = async (product) => {
-    const response = await adminApi.approvePackage(product.id);
-    setMessage(response.message);
-    await load();
-  };
-
-  const reject = async (product) => {
-    const response = await adminApi.rejectPackage(product.id);
-    setMessage(response.message);
-    await load();
   };
 
   const hide = async (product) => {
@@ -414,9 +399,6 @@ function AdminPackagesPage() {
             onClick={() => { setActiveTab(tab.value); setSelected(null); setMessage(''); }}
           >
             {tab.label}
-            {tab.value === 'pending' && stats.pending > 0 && (
-              <span className="admin-tab-badge">{stats.pending}</span>
-            )}
             {tab.value === 'selling' && stats.active > 0 && (
               <span className="admin-tab-badge admin-tab-badge--green">{stats.active}</span>
             )}
@@ -461,9 +443,6 @@ function AdminPackagesPage() {
                   <span className="admin-product-row__body">
                     <strong>{product.name}</strong>
                     <small>{product.sku} · {categoryLabels[product.category] || product.category} · {Number(product.price).toLocaleString('vi-VN')}đ/{product.unit}</small>
-                    {activeTab === 'pending' && (
-                      <small className="admin-meta">Kho: {product.providerName || `#${product.providerId}`}</small>
-                    )}
                   </span>
                   <span className={`admin-badge admin-badge--${status.className}`}>{status.label}</span>
                 </button>
@@ -590,16 +569,6 @@ function AdminPackagesPage() {
                   <button className="btn btn--primary" type="button" onClick={saveProduct}>
                     <Save size={17} />
                     Lưu thay đổi
-                  </button>
-                  {!productStatus(selected).className.includes('success') && (
-                    <button className="btn btn--secondary" type="button" onClick={() => approve(selected)}>
-                      <CheckCircle2 size={17} />
-                      Duyệt
-                    </button>
-                  )}
-                  <button className="btn btn--ghost" type="button" onClick={() => reject(selected)}>
-                    <XCircle size={17} />
-                    Từ chối
                   </button>
                   <button className="btn btn--ghost" type="button" onClick={() => hide(selected)}>
                     <EyeOff size={17} />

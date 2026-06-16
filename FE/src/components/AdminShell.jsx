@@ -71,8 +71,8 @@ function AdminShell({ title, subtitle, action, children }) {
   }, [location.pathname]);
 
   const badges = useMemo(() => ({
-    packages: (dashboard?.pendingPackages || 0) + (dashboard?.lowStockProducts || 0),
-    inventory: dashboard?.pendingInventoryRequests || 0,
+    packages: dashboard?.lowStockProducts || 0,
+    inventory: (dashboard?.pendingInventoryRequests || 0) + (dashboard?.pendingPackages || 0),
     orders: (dashboard?.awaitingBankTransfers || 0) + (dashboard?.codUncollected || 0),
     providers: dashboard?.pendingProviders,
     reports: dashboard?.openSupportRequests,

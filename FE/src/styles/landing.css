@@ -5314,6 +5314,10 @@ ul {
   overflow-y: auto;
 }
 
+.ad-inv-list--products {
+  max-height: 320px;
+}
+
 .ad-inv-empty {
   padding: 30px 14px;
   color: #6b7f90;
@@ -5333,6 +5337,21 @@ ul {
   text-align: left;
   cursor: pointer;
   transition: all 180ms ease;
+}
+
+.ad-inv-row--product {
+  cursor: default;
+}
+
+.ad-inv-product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ad-inv-product-actions .btn {
+  min-height: 36px;
 }
 .ad-inv-row:hover,
 .ad-inv-row.is-selected {

@@ -115,14 +115,30 @@ function OrderCreatePage() {
     setForm((current) => ({ ...current, [key]: value }));
   };
 
+  const getSelectedShippingAddress = () => (
+    addressMode.startsWith('saved') && savedAddress
+      ? savedAddress
+      : form.shippingAddress.trim()
+  );
+
+  const updateQuantity = (nextQuantity) => {
+    const maxStock = Number(product?.stockQuantity || 1);
+    const normalized = Math.max(1, Math.min(maxStock, Number(nextQuantity) || 1));
+    updateForm('quantity', normalized);
+  };
+
   const validate = () => {
     const quantity = Number(form.quantity);
     if (!Number.isInteger(quantity) || quantity <= 0) {
       return 'Số lượng phải là số nguyên lớn hơn 0.';
     }
 
-    if (!form.shippingName.trim() || !form.shippingPhone.trim() || !form.shippingAddress.trim()) {
+    if (!form.shippingName.trim() || !form.shippingPhone.trim()) {
       return 'Vui lòng nhập đầy đủ thông tin người nhận.';
+    }
+
+    if (!getSelectedShippingAddress()) {
+      return 'Vui lòng nhập đầy đủ địa chỉ nhận hàng.';
     }
 
     if (!PHONE_PATTERN.test(form.shippingPhone.trim())) {
@@ -165,9 +181,7 @@ function OrderCreatePage() {
       return;
     }
 
-    const selectedShippingAddress = addressMode.startsWith('saved') && savedAddress
-      ? savedAddress
-      : form.shippingAddress.trim();
+    const selectedShippingAddress = getSelectedShippingAddress();
 
     if (saveRecipientInfo && !addressMode.startsWith('saved')) {
       setSavingProfile(true);
@@ -264,22 +278,38 @@ function OrderCreatePage() {
 
             {/* Order Form Card */}
             <div className="order-form-card">
-              <form onSubmit={handleSubmit}>
+              <form id="order-create-form" onSubmit={handleSubmit}>
                 {/* Order Details Section */}
                 <div className="form-section">
                   <h3 className="form-section-title">Chi tiết đơn hàng</h3>
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">Số lượng<span className="required-mark">*</span></label>
-                      <input
-                        type="number"
-                        className="form-input"
-                        min="1"
-                        max={product?.stockQuantity || 1}
-                        value={form.quantity}
-                        onChange={(e) => updateForm('quantity', e.target.value)}
-                        disabled={loadingProduct || isOutOfStock}
-                      />
+                      <div className="quantity-stepper">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(Number(form.quantity) - 1)}
+                          disabled={loadingProduct || isOutOfStock || Number(form.quantity) <= 1}
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          className="form-input quantity-input"
+                          min="1"
+                          max={product?.stockQuantity || 1}
+                          value={form.quantity}
+                          onChange={(e) => updateQuantity(e.target.value)}
+                          disabled={loadingProduct || isOutOfStock}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(Number(form.quantity) + 1)}
+                          disabled={loadingProduct || isOutOfStock || Number(form.quantity) >= Number(product?.stockQuantity || 1)}
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -401,15 +431,6 @@ function OrderCreatePage() {
                 {/* Error Message */}
                 {error && <div className="form-error">{error}</div>}
 
-                {/* Action Buttons */}
-                <div className="form-actions">
-                  <button type="button" className="btn-secondary-back" onClick={handleBack}>
-                    ← Quay lại
-                  </button>
-                  <button type="submit" className="btn-primary-checkout" disabled={loadingProduct || isOutOfStock || savingProfile}>
-                    {isOutOfStock ? 'Hết hàng' : 'Tiếp tục thanh toán →'}
-                  </button>
-                </div>
               </form>
             </div>
 
@@ -429,6 +450,14 @@ function OrderCreatePage() {
                   <span className="summary-label">Tổng thanh toán</span>
                   <span className="summary-value">{total.toLocaleString('vi-VN')}đ</span>
                 </div>
+              </div>
+              <div className="summary-actions">
+                <button type="submit" form="order-create-form" className="btn-primary-checkout" disabled={loadingProduct || isOutOfStock || savingProfile}>
+                  {isOutOfStock ? 'Hết hàng' : 'Tiếp tục thanh toán →'}
+                </button>
+                <button type="button" className="btn-secondary-back" onClick={handleBack}>
+                  ← Quay lại
+                </button>
               </div>
             </div>
           </div>
