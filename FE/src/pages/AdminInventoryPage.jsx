@@ -161,10 +161,13 @@ function AdminInventoryPage() {
           ))}
         </div>
 
-        <div className="ad-inv-panel">
-          <div className="ad-inv-detail__head">
-            <h3>Sản phẩm nhập mới chờ duyệt</h3>
-            <span className="badge badge--warning">{pendingProducts.length} sản phẩm</span>
+        <div className="ad-inv-panel ad-inv-products-panel">
+          <div className="ad-inv-products-head">
+            <div>
+              <span>Sản phẩm từ kho vận</span>
+              <h3>Sản phẩm nhập mới chờ duyệt</h3>
+            </div>
+            <strong>{pendingProducts.length} sản phẩm</strong>
           </div>
 
           <div className="ad-inv-list ad-inv-list--products">
@@ -173,17 +176,26 @@ function AdminInventoryPage() {
               <p className="ad-inv-empty">Không có sản phẩm nhập mới đang chờ duyệt.</p>
             )}
             {visiblePendingProducts.map((product) => (
-              <article className="ad-inv-row ad-inv-row--product" key={product.id}>
-                <div className="ad-inv-row__top">
-                  <strong>{product.name}</strong>
+              <article className="ad-inv-product-card" key={product.id}>
+                <div className="ad-inv-product-card__top">
+                  <span className="ad-inv-product-icon">
+                    <PackagePlus size={18} />
+                  </span>
                   <span className="badge badge--warning">Chờ duyệt</span>
                 </div>
-                <div className="ad-inv-row__mid">
-                  {product.sku || `#${product.id}`} - {Number(product.price || 0).toLocaleString('vi-VN')}đ/{product.unit || 'đơn vị'}
+                <div className="ad-inv-product-card__body">
+                  <h4>{product.name}</h4>
+                  <p>{product.sku || `#${product.id}`} · {Number(product.price || 0).toLocaleString('vi-VN')}đ/{product.unit || 'đơn vị'}</p>
                 </div>
-                <div className="ad-inv-row__bot">
-                  <span>{product.stockQuantity || 0} {product.unit || ''}</span>
-                  <span>{product.providerName || `#${product.providerId}`}</span>
+                <div className="ad-inv-product-meta">
+                  <div>
+                    <span>Số lượng</span>
+                    <strong>{product.stockQuantity || 0} {product.unit || ''}</strong>
+                  </div>
+                  <div>
+                    <span>Kho vận</span>
+                    <strong>{product.providerName || `#${product.providerId}`}</strong>
+                  </div>
                 </div>
                 <div className="ad-inv-product-actions">
                   <button className="btn btn--primary" type="button" onClick={() => approveProduct(product)}>
