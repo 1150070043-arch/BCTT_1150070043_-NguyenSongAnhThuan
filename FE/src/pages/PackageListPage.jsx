@@ -4,6 +4,7 @@ import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import CustomSelect from '../components/CustomSelect.jsx';
 import packagesApi from '../api/packages.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 
 const categoryLabels = {
   DaVien: 'Đá viên',
@@ -198,12 +199,13 @@ function PackageListPage() {
                       const thumb = product.images?.find((image) => image.isPrimary)?.imageUrl
                         || product.images?.[0]?.imageUrl
                         || product.imageUrl;
+                      const thumbSrc = resolveImageUrl(thumb);
 
                       return (
                       <article key={product.id} className="package-card">
                         <div className="product-card-image">
-                          {thumb ? (
-                            <img src={thumb} alt={product.name} />
+                          {thumbSrc ? (
+                            <img src={thumbSrc} alt={product.name} />
                           ) : (
                             <span className="product-card-image__fallback" aria-hidden="true">
                               <ImagePlus size={34} />
@@ -270,4 +272,3 @@ function PackageListPage() {
 }
 
 export default PackageListPage;
-

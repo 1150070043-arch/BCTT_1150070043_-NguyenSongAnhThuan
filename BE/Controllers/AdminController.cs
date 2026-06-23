@@ -560,7 +560,7 @@ namespace WebsiteServiceEcommerce.API.Controllers
             {
                 ProductId = id,
                 FileName = safeFileName,
-                ImageUrl = $"{Request.Scheme}://{Request.Host}/uploads/products/{id}/{safeFileName}",
+                ImageUrl = $"/uploads/products/{id}/{safeFileName}",
                 SortOrder = package.Images.Any() ? package.Images.Max(i => i.SortOrder) + 1 : 1,
                 IsPrimary = isPrimary,
                 CreatedAt = DateTime.UtcNow

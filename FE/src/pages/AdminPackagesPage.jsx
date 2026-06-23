@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import adminApi from '../api/admin.js';
 import AdminSelect from '../components/AdminSelect.jsx';
 import AdminShell from '../components/AdminShell.jsx';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 
 const emptyProduct = {
   providerId: '',
@@ -283,6 +284,7 @@ function AdminPackagesPage() {
   };
 
   const primaryImage = getPrimaryImage(form);
+  const primaryImageSrc = resolveImageUrl(primaryImage);
   const imageCount = form.images?.length || 0;
 
   return (
@@ -430,6 +432,7 @@ function AdminPackagesPage() {
             {products.map((product) => {
               const status = productStatus(product);
               const thumb = getPrimaryImage(product);
+              const thumbSrc = resolveImageUrl(thumb);
               return (
                 <button
                   className={`admin-product-row ${selected?.id === product.id ? 'is-selected' : ''}`}
@@ -438,7 +441,7 @@ function AdminPackagesPage() {
                   onClick={() => selectProduct(product)}
                 >
                   <span className="admin-product-thumb">
-                    {thumb ? <img src={thumb} alt={product.name} /> : <ImagePlus size={24} />}
+                    {thumbSrc ? <img src={thumbSrc} alt={product.name} /> : <ImagePlus size={24} />}
                   </span>
                   <span className="admin-product-row__body">
                     <strong>{product.name}</strong>
@@ -456,7 +459,7 @@ function AdminPackagesPage() {
             ) : (
               <>
                 <div className="admin-editor__preview">
-                  {primaryImage ? <img src={primaryImage} alt={form.name} /> : <ImagePlus size={42} />}
+                  {primaryImageSrc ? <img src={primaryImageSrc} alt={form.name} /> : <ImagePlus size={42} />}
                 </div>
 
                 <section className="admin-image-manager">
@@ -487,7 +490,7 @@ function AdminPackagesPage() {
                   <div className="admin-image-grid">
                     {form.images?.map((image) => (
                       <article className={`admin-image-tile ${image.isPrimary ? 'is-primary' : ''}`} key={image.id}>
-                        <img src={image.imageUrl} alt={form.name} />
+                        <img src={resolveImageUrl(image.imageUrl)} alt={form.name} />
                         <div className="admin-image-tile__actions">
                           <button className="btn btn--tiny" type="button" disabled={image.isPrimary} onClick={() => setPrimaryImage(image)}>
                             Ảnh chính

@@ -6,6 +6,7 @@ import authApi from '../api/auth.js';
 import Header from '../components/Header.jsx';
 import AddressPicker from '../components/AddressPicker.jsx';
 import { getAuth, updateStoredAuth } from '../utils/authStorage.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 import '../styles/order-create.css';
 
 const PHONE_PATTERN = /^[0-9+\-\s]{9,15}$/;
@@ -256,7 +257,7 @@ function OrderCreatePage() {
             <div className="product-summary-card">
               <div className="product-visual">
                 {product?.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.name} />
+                  <img src={resolveImageUrl(product.imageUrl)} alt={product.name} />
                 ) : (
                   <span style={{ fontSize: '3rem' }}>💎</span>
                 )}
@@ -468,4 +469,3 @@ function OrderCreatePage() {
 }
 
 export default OrderCreatePage;
-

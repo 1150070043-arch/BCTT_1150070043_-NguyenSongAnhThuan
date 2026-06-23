@@ -4,6 +4,7 @@ import { CheckCircle2, ImagePlus, PackageCheck, ShoppingCart, Snowflake, Truck }
 import Header from '../components/Header.jsx';
 import Footer from '../components/Footer.jsx';
 import packagesApi from '../api/packages.js';
+import { resolveImageUrl } from '../utils/imageUrl.js';
 
 const categoryLabels = {
   DaVien: 'Đá viên',
@@ -105,7 +106,7 @@ function PackageDetailPage() {
                 <div className="product-detail-gallery">
                   <div className="product-detail-gallery__main">
                     {selectedImage ? (
-                      <img src={selectedImage} alt={product.name} />
+                      <img src={resolveImageUrl(selectedImage)} alt={product.name} />
                     ) : (
                       <span className="product-detail-gallery__fallback" aria-hidden="true">
                         <ImagePlus size={44} />
@@ -121,7 +122,7 @@ function PackageDetailPage() {
                           type="button"
                           onClick={() => setSelectedImage(image.imageUrl)}
                         >
-                          <img src={image.imageUrl} alt={product.name} />
+                          <img src={resolveImageUrl(image.imageUrl)} alt={product.name} />
                         </button>
                       ))}
                     </div>
@@ -261,4 +262,3 @@ function PackageDetailPage() {
 }
 
 export default PackageDetailPage;
-
